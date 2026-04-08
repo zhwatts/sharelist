@@ -33,16 +33,35 @@ scripts/  — Automation and tooling scripts
 
 ## Environment variables
 
-See `.env.example` for all required variables. The key ones to fill in before running locally:
+Copy `.env.example` to `.env` (the setup script does this automatically) and fill in the values below.
 
-| Variable | Description |
+### Required to run locally
+
+| Variable | Where to get it |
 |---|---|
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_ANON_KEY` | Supabase public anon key |
-| `VITE_SUPABASE_URL` | Same URL, exposed to the frontend |
-| `VITE_SUPABASE_ANON_KEY` | Same anon key, exposed to the frontend |
+| `SUPABASE_URL` | Supabase project → Settings → API |
+| `SUPABASE_ANON_KEY` | Supabase project → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase project → Settings → API (keep secret) |
+| `VITE_SUPABASE_URL` | Same as `SUPABASE_URL` |
+| `VITE_SUPABASE_ANON_KEY` | Same as `SUPABASE_ANON_KEY` |
 
-Streaming service OAuth credentials (Spotify, Apple Music, Google) are only needed when working on those integrations.
+### GitHub automation (scripts only)
+
+| Variable | Notes |
+|---|---|
+| `GITHUB_TOKEN` | Personal access token — scopes: `repo`, `project` |
+| `GITHUB_OWNER` | Your GitHub username |
+| `GITHUB_REPO` | `sharelist` |
+| `GITHUB_PROJECT_ID` | Numeric ID from the project board URL |
+
+### Streaming service OAuth (only needed for those integrations)
+
+| Variable | Where to get it |
+|---|---|
+| `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) |
+| `SPOTIFY_REDIRECT_URI` | Must match the URI registered in the Spotify app |
+| `APPLE_MUSIC_TEAM_ID` / `APPLE_MUSIC_KEY_ID` / `APPLE_MUSIC_PRIVATE_KEY` | Apple Developer account |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` | Google Cloud Console → APIs & Services → Credentials |
 
 ## Tech stack
 
