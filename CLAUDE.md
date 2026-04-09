@@ -47,10 +47,35 @@ developer has explicitly moved it to "In Progress" first.
   without explicit developer instruction
 - Agents must never move an issue to Done — that is the developer's action only
 
+**No work without a ticket — no exceptions:**
+This rule applies to every change, no matter how small: config edits, env var
+changes, refactors, dependency updates, documentation. If there is no open
+GitHub issue covering the change, the agent must create one first and wait for
+the developer to move it to "In Progress" before touching any file.
+
+Conversational answers, explanations, and architectural recommendations do not
+require a ticket. Any action that writes, edits, or deletes a file does.
+
+**Every new issue must be on the project board with Backlog status:**
+The GitHub Project board is the primary visibility mechanism for all work. An
+issue not on the board — or on the board with no status — is invisible to the
+developer. See `.claude/agents/github-agent.md` for the exact creation
+procedure, including the GraphQL mutation required to set the status.
+
 ## Agent roles
 - Orchestrator: receives goals, creates issues, delegates to other agents
 - Builder: writes and reviews all application code
 - GitHub agent: manages the project board and issue lifecycle
+
+## Frontend architecture — API-only
+The frontend (`apps/web`) must never interact with Supabase directly. All data
+access and authentication goes through the Express API (`apps/api`).
+
+- No `@supabase/supabase-js` in `apps/web`
+- No Supabase URL or anon key in any `VITE_*` env var
+- The only env var the frontend needs is `VITE_API_URL`
+- Auth tokens received from the API are stored client-side and sent as
+  `Authorization: Bearer <token>` headers on subsequent API requests
 
 ## Out of scope
 - Audio streaming or playback

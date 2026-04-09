@@ -1,13 +1,25 @@
-import type { Platform } from '@sharelist/shared'
-
-const SUPPORTED_PLATFORMS: Platform[] = ['spotify', 'apple_music', 'youtube_music']
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { Nav } from './components/Nav'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { SignIn } from './pages/SignIn'
+import { SignUp } from './pages/SignUp'
+import { PasswordResetRequest } from './pages/PasswordResetRequest'
+import { PasswordResetConfirm } from './pages/PasswordResetConfirm'
+import { Profile } from './pages/Profile'
 
 function App() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50">
-      <h1 className="text-4xl font-bold text-gray-900">ShareList</h1>
-      <p className="text-gray-500">{SUPPORTED_PLATFORMS.join(' · ')}</p>
-    </main>
+    <div className="min-h-screen bg-gray-50">
+      <Nav />
+      <Routes>
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot-password" element={<PasswordResetRequest />} />
+        <Route path="/reset-password" element={<PasswordResetConfirm />} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/" element={<Navigate to="/profile" replace />} />
+      </Routes>
+    </div>
   )
 }
 

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@sharelist/shared": "*",
+    "@supabase/supabase-js": "^2.0.0",
     "express": "^4.21.1"
   },
   "devDependencies": {
