@@ -18,8 +18,6 @@ export function PasswordResetConfirm() {
     const type = params.get('type')
     if (token && type === 'recovery') {
       setAccessToken(token)
-      // Clean the hash from the URL without triggering a navigation
-      window.history.replaceState(null, '', window.location.pathname)
     } else {
       setError('Invalid or missing reset token. Please request a new reset link.')
     }
@@ -33,6 +31,7 @@ export function PasswordResetConfirm() {
     const result = await confirmPasswordReset(accessToken, password)
     setLoading(false)
     if (isError(result)) { setError(result.error.message); return }
+    window.history.replaceState(null, '', window.location.pathname)
     navigate('/signin')
   }
 
