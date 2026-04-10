@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import type { Request, Response, NextFunction } from 'express'
 import type { ApiResult, ApiError } from '@sharelist/shared'
-import { supabaseAdmin } from '../lib/supabase'
+import { supabaseAuth, supabaseAdmin } from '../lib/supabase'
 import { requireAuth, requirePermission } from '../middleware/auth'
 
 const router = Router()
@@ -37,7 +37,7 @@ function requirePermissionOrSelfManage(permission: string) {
 
 // GET /admin/users — list all users with their profiles and permissions
 router.get('/', requirePermission('usermanage:listusers'), async (req: Request, res: Response) => {
-  const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers()
+  const { data: { users }, error } = await supabaseAuth.auth.admin.listUsers()
   if (error) {
     log('error', 'List users failed', { adminId: req.user!.id, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message } }
@@ -78,7 +78,7 @@ router.post('/', requirePermission('usermanage:add'), async (req: Request, res: 
     return
   }
 
-  const { data: { user }, error } = await supabaseAdmin.auth.admin.createUser({
+  const { data: { user }, error } = await supabaseAuth.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -108,7 +108,7 @@ router.post('/:id/password', requirePermissionOrSelfManage('usermanage:updatepas
     return
   }
 
-  const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { password })
+  const { error } = await supabaseAuth.auth.admin.updateUserById(id, { password })
   if (error) {
     log('error', 'Admin password reset failed', { adminId: req.user!.id, targetId: id, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message } }
@@ -125,7 +125,7 @@ router.post('/:id/password', requirePermissionOrSelfManage('usermanage:updatepas
 router.post('/:id/verify', requireAdminOrSelfManage, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
-  const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { email_confirm: true })
+  const { error } = await supabaseAuth.auth.admin.updateUserById(id, { email_confirm: true })
   if (error) {
     log('error', 'Verify user failed', { adminId: req.user!.id, targetId: id, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message } }
@@ -142,7 +142,7 @@ router.post('/:id/verify', requireAdminOrSelfManage, async (req: Request, res: R
 router.post('/:id/resend-verification', requireAdminOrSelfManage, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
-  const { data: { user }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(id)
+  const { data: { user }, error: getUserError } = await supabaseAuth.auth.admin.getUserById(id)
   if (getUserError || !user?.email) {
     const err: ApiError = { data: null, error: { message: 'User not found' } }
     res.status(404).json(err)
@@ -155,7 +155,7 @@ router.post('/:id/resend-verification', requireAdminOrSelfManage, async (req: Re
     return
   }
 
-  const { error } = await supabaseAdmin.auth.resend({ type: 'signup', email: user.email })
+  const { error } = await supabaseAuth.auth.resend({ type: 'signup', email: user.email })
   if (error) {
     log('error', 'Resend verification failed', { adminId: req.user!.id, targetId: id, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message } }
@@ -212,14 +212,14 @@ router.post('/:id/magic-link', requireAdminOrSelfManage, async (req: Request, re
   const id = req.params['id'] as string
   const { redirectTo } = req.body as { redirectTo?: string }
 
-  const { data: { user }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(id)
+  const { data: { user }, error: getUserError } = await supabaseAuth.auth.admin.getUserById(id)
   if (getUserError || !user?.email) {
     const err: ApiError = { data: null, error: { message: 'User not found' } }
     res.status(404).json(err)
     return
   }
 
-  const { error } = await supabaseAdmin.auth.signInWithOtp({
+  const { error } = await supabaseAuth.auth.signInWithOtp({
     email: user.email,
     options: {
       shouldCreateUser: false,
@@ -293,7 +293,7 @@ router.patch('/:id/suspend', requirePermissionOrSelfManage('usermanage:suspend')
     return
   }
 
-  const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(id, { ban_duration: '876000h' })
+  const { error: banError } = await supabaseAuth.auth.admin.updateUserById(id, { ban_duration: '876000h' })
   if (banError) {
     log('warn', 'Suspend: profile suspended but auth ban failed', { adminId: req.user!.id, targetId: id, error: banError.message })
   }
@@ -318,7 +318,7 @@ router.patch('/:id/unsuspend', requirePermissionOrSelfManage('usermanage:suspend
     return
   }
 
-  const { error: unbanError } = await supabaseAdmin.auth.admin.updateUserById(id, { ban_duration: 'none' })
+  const { error: unbanError } = await supabaseAuth.auth.admin.updateUserById(id, { ban_duration: 'none' })
   if (unbanError) {
     log('warn', 'Unsuspend: profile restored but auth unban failed', { adminId: req.user!.id, targetId: id, error: unbanError.message })
   }
@@ -345,7 +345,7 @@ router.put('/:id/permissions', requirePermissionOrSelfManage('usermanage:editper
     return
   }
 
-  const { error } = await supabaseAdmin.auth.admin.updateUserById(id, {
+  const { error } = await supabaseAuth.auth.admin.updateUserById(id, {
     app_metadata: { permissions },
   })
 
@@ -365,7 +365,7 @@ router.put('/:id/permissions', requirePermissionOrSelfManage('usermanage:editper
 router.delete('/:id', requirePermissionOrSelfManage('usermanage:deleteusers'), async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
-  const { error } = await supabaseAdmin.auth.admin.deleteUser(id)
+  const { error } = await supabaseAuth.auth.admin.deleteUser(id)
   if (error) {
     log('error', 'Delete user failed', { adminId: req.user!.id, targetId: id, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message } }

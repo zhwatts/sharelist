@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
-import { supabaseAdmin } from '../lib/supabase'
+import { supabaseAuth, supabaseAdmin } from '../lib/supabase'
 
 function log(level: string, message: string, ctx: Record<string, unknown> = {}): void {
   console.log(JSON.stringify({ level, message, ...ctx }))
@@ -13,7 +13,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   const token = authHeader.slice(7)
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  const { data: { user }, error } = await supabaseAuth.auth.getUser(token)
 
   if (error || !user) {
     log('warn', 'Auth failed: invalid token', { path: req.path, method: req.method })

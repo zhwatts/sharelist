@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import type { Request, Response } from 'express'
 import type { User, Platform, ApiResult, ApiError } from '@sharelist/shared'
-import { supabaseAdmin } from '../lib/supabase'
+import { supabaseAuth, supabaseAdmin } from '../lib/supabase'
 import { requireAuth } from '../middleware/auth'
 
 const router = Router()
@@ -62,7 +62,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 
   // Fetch email from auth.users via admin API
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.getUserById(id)
+  const { data: authData, error: authError } = await supabaseAuth.auth.admin.getUserById(id)
   if (authError || !authData.user) {
     log('error', 'Failed to fetch auth user for profile', { id, error: authError?.message })
     const err: ApiError = { data: null, error: { message: 'User not found' } }

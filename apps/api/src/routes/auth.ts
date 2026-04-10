@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import type { Request, Response } from 'express'
 import type { User, Platform, ApiResult, ApiError } from '@sharelist/shared'
-import { supabaseAdmin } from '../lib/supabase'
+import { supabaseAuth, supabaseAdmin } from '../lib/supabase'
 import { requireAuth } from '../middleware/auth'
 
 const router = Router()
@@ -50,7 +50,7 @@ router.post('/register', async (req: Request, res: Response) => {
     return
   }
 
-  const { data, error } = await supabaseAdmin.auth.signUp({ email, password })
+  const { data, error } = await supabaseAuth.auth.signUp({ email, password })
   if (error) {
     log('warn', 'Register failed', { email, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message, code: error.code } }
@@ -71,7 +71,7 @@ router.post('/login', async (req: Request, res: Response) => {
     return
   }
 
-  const { data, error } = await supabaseAdmin.auth.signInWithPassword({ email, password })
+  const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password })
   if (error) {
     log('warn', 'Login failed', { email, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message } }
@@ -87,7 +87,7 @@ router.post('/login', async (req: Request, res: Response) => {
 router.post('/logout', requireAuth, async (req: Request, res: Response) => {
   // Re-extract token from header (guaranteed present — requireAuth already validated it)
   const token = (req.headers.authorization as string).slice(7)
-  const { error } = await supabaseAdmin.auth.admin.signOut(token)
+  const { error } = await supabaseAuth.auth.admin.signOut(token)
   if (error) {
     log('error', 'Logout failed', { userId: req.user!.id, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message } }
@@ -110,7 +110,7 @@ router.post('/password-reset/request', async (req: Request, res: Response) => {
   }
 
   const options = redirectTo ? { redirectTo } : undefined
-  const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, options)
+  const { error } = await supabaseAuth.auth.resetPasswordForEmail(email, options)
   if (error) {
     log('error', 'Password reset request failed', { email, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message } }
@@ -137,7 +137,7 @@ router.post('/password-reset/confirm', async (req: Request, res: Response) => {
     return
   }
 
-  const { data: { user }, error: getUserError } = await supabaseAdmin.auth.getUser(access_token)
+  const { data: { user }, error: getUserError } = await supabaseAuth.auth.getUser(access_token)
   if (getUserError || !user) {
     log('warn', 'Password reset confirm: invalid token', { error: getUserError?.message })
     const err: ApiError = { data: null, error: { message: 'Invalid or expired token' } }
@@ -145,7 +145,7 @@ router.post('/password-reset/confirm', async (req: Request, res: Response) => {
     return
   }
 
-  const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password })
+  const { error: updateError } = await supabaseAuth.auth.admin.updateUserById(user.id, { password })
   if (updateError) {
     log('error', 'Password reset confirm: update failed', { userId: user.id, error: updateError.message })
     const err: ApiError = { data: null, error: { message: updateError.message } }
