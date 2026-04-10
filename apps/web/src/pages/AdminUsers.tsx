@@ -10,7 +10,7 @@ const PERMISSION_META = [
   { key: 'usermanage:updatepassword', label: 'Reset passwords', description: 'Can reset passwords for other users' },
   { key: 'usermanage:deleteusers', label: 'Delete users', description: 'Can permanently delete user accounts' },
   { key: 'usermanage:editpermissions', label: 'Edit permissions', description: 'Can grant or revoke permissions for other users' },
-  { key: 'account:selfmanage', label: 'Full self-management', description: 'Can manage all aspects of their own account, including their own permissions' },
+  { key: 'usermanage:selfmanage', label: 'Full self-management', description: 'Can manage all aspects of their own account, including their own permissions' },
 ]
 
 export function AdminUsers() {
@@ -63,11 +63,11 @@ export function AdminUsers() {
   const canResetPassword = me?.permissions.includes('usermanage:updatepassword') ?? false
   const canDelete = me?.permissions.includes('usermanage:deleteusers') ?? false
   const canEditPermissions = me?.permissions.includes('usermanage:editpermissions') ?? false
-  const canSelfManage = me?.permissions.includes('account:selfmanage') ?? false
+  const canSelfManage = me?.permissions.includes('usermanage:selfmanage') ?? false
   const isAdmin = me?.role === 'admin'
   const isSelf = target?.id === me?.id
   // canActOnTarget: true when the viewer can take actions on this specific user
-  // (either because it's not themselves, or because they hold account:selfmanage)
+  // (either because it's not themselves, or because they hold usermanage:selfmanage)
   const canActOnTarget = !isSelf || canSelfManage
   // readOnly: can view the modal but has no write permissions applicable to this user
   const readOnly = !isAdmin && !canSuspend && !canResetPassword && !canEditPermissions && !canDelete && !(canSelfManage && isSelf)

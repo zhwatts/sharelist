@@ -13,22 +13,22 @@ function log(level: string, message: string, ctx: Record<string, unknown> = {}):
   console.log(JSON.stringify({ level, message, ...ctx }))
 }
 
-// Allows through if the caller is an admin OR if they hold account:selfmanage and are targeting themselves.
+// Allows through if the caller is an admin OR if they hold usermanage:selfmanage and are targeting themselves.
 function requireAdminOrSelfManage(req: Request, res: Response, next: NextFunction): void {
   const id = req.params['id'] as string
   const isSelf = req.user!.id === id
-  const hasSelfManage = req.user!.permissions.includes('account:selfmanage')
+  const hasSelfManage = req.user!.permissions.includes('usermanage:selfmanage')
   if (req.user!.role === 'admin' || (isSelf && hasSelfManage)) { next(); return }
   const err: ApiError = { data: null, error: { message: 'Forbidden' } }
   res.status(403).json(err)
 }
 
-// Allows through if the caller holds the named permission OR holds account:selfmanage and is targeting themselves.
+// Allows through if the caller holds the named permission OR holds usermanage:selfmanage and is targeting themselves.
 function requirePermissionOrSelfManage(permission: string) {
   return function (req: Request, res: Response, next: NextFunction): void {
     const id = req.params['id'] as string
     const isSelf = req.user!.id === id
-    const hasSelfManage = req.user!.permissions.includes('account:selfmanage')
+    const hasSelfManage = req.user!.permissions.includes('usermanage:selfmanage')
     if (req.user!.permissions.includes(permission) || (isSelf && hasSelfManage)) { next(); return }
     const err: ApiError = { data: null, error: { message: `Missing required permission: ${permission}` } }
     res.status(403).json(err)
@@ -312,7 +312,7 @@ router.put('/:id/permissions', requirePermissionOrSelfManage('usermanage:editper
     return
   }
 
-  const valid = ['usermanage:add', 'usermanage:suspend', 'usermanage:updatepassword', 'usermanage:listusers', 'usermanage:deleteusers', 'usermanage:editpermissions', 'account:selfmanage']
+  const valid = ['usermanage:add', 'usermanage:suspend', 'usermanage:updatepassword', 'usermanage:listusers', 'usermanage:deleteusers', 'usermanage:editpermissions', 'usermanage:selfmanage']
   const invalid = (permissions as string[]).filter(p => !valid.includes(p))
   if (invalid.length > 0) {
     res.status(400).json({ data: null, error: { message: `Unknown permissions: ${invalid.join(', ')}` } })
