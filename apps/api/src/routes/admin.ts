@@ -50,12 +50,16 @@ router.get('/', requirePermission('usermanage:listusers'), async (req: Request, 
 
   const list = users.map(u => {
     const profile = profileMap.get(u.id) ?? {}
+    const profileStatus = (profile as Record<string, unknown>)['status'] as string | undefined
+    // Fall back to auth ban when no profile row exists
+    const isBanned = u.banned_until && u.banned_until !== 'none' && new Date(u.banned_until) > new Date()
+    const status = profileStatus ?? (isBanned ? 'suspended' : 'active')
     return {
       id: u.id,
       email: u.email,
       displayName: (profile as Record<string, unknown>)['display_name'] ?? null,
       avatarUrl: (profile as Record<string, unknown>)['avatar_url'] ?? null,
-      status: (profile as Record<string, unknown>)['status'] ?? 'active',
+      status,
       permissions: (u.app_metadata?.['permissions'] as string[] | undefined) ?? [],
       emailConfirmed: !!u.email_confirmed_at,
       createdAt: u.created_at,
@@ -256,11 +260,10 @@ router.patch('/:id/suspend', requirePermissionOrSelfManage('usermanage:suspend')
 
   const { error: profileError } = await supabaseAdmin
     .from('profiles')
-    .update({ status: 'suspended' })
-    .eq('id', id)
+    .upsert({ id, status: 'suspended' }, { onConflict: 'id' })
 
   if (profileError) {
-    log('error', 'Suspend: profile update failed', { adminId: req.user!.id, targetId: id, error: profileError.message })
+    log('error', 'Suspend: profile upsert failed', { adminId: req.user!.id, targetId: id, error: profileError.message })
     const err: ApiError = { data: null, error: { message: profileError.message } }
     res.status(500).json(err)
     return
@@ -282,11 +285,10 @@ router.patch('/:id/unsuspend', requirePermissionOrSelfManage('usermanage:suspend
 
   const { error: profileError } = await supabaseAdmin
     .from('profiles')
-    .update({ status: 'active' })
-    .eq('id', id)
+    .upsert({ id, status: 'active' }, { onConflict: 'id' })
 
   if (profileError) {
-    log('error', 'Unsuspend: profile update failed', { adminId: req.user!.id, targetId: id, error: profileError.message })
+    log('error', 'Unsuspend: profile upsert failed', { adminId: req.user!.id, targetId: id, error: profileError.message })
     const err: ApiError = { data: null, error: { message: profileError.message } }
     res.status(500).json(err)
     return
