@@ -1,7 +1,6 @@
-import { ConfigProvider, theme } from 'antd'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { Nav } from './components/Nav'
-import { ProtectedRoute } from './components/ProtectedRoute'
+import { ConfigProvider, theme, Flex, Typography } from 'antd'
+import { Routes, Route } from 'react-router-dom'
+import { MainLayout } from './components/MainLayout'
 import { PermissionRoute } from './components/PermissionRoute'
 import { SignIn } from './pages/SignIn'
 import { SignUp } from './pages/SignUp'
@@ -20,6 +19,21 @@ const SL = {
   mint: '#4ADE80',
   text: '#F1F5F9',
   muted: '#64748B',
+}
+
+function ComingSoon({ title }: { title: string }) {
+  return (
+    <Flex justify="center" align="center" style={{ minHeight: '40vh', padding: '32px 24px' }}>
+      <div style={{ textAlign: 'center' }}>
+        <Typography.Title level={3} style={{ color: SL.text, marginBottom: '8px' }}>
+          {title}
+        </Typography.Title>
+        <Typography.Text style={{ color: SL.muted }}>
+          Coming soon
+        </Typography.Text>
+      </div>
+    </Flex>
+  )
 }
 
 function App() {
@@ -61,23 +75,18 @@ function App() {
         },
       }}
     >
-      <div
-        style={{
-          minHeight: '100vh',
-          backgroundColor: SL.bg,
-          fontFamily: 'Inter, system-ui, sans-serif',
-          backgroundImage:
-            'radial-gradient(circle at 20% 10%, rgba(56,189,248,0.06) 0%, rgba(56,189,248,0.02) 40%, transparent 70%)',
-        }}
-      >
-        <Nav />
-        <Routes>
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgot-password" element={<PasswordResetRequest />} />
-          <Route path="/reset-password" element={<PasswordResetConfirm />} />
-          <Route path="/magic-link" element={<MagicLinkConfirm />} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Routes>
+        {/* Auth routes — standalone, no shell */}
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot-password" element={<PasswordResetRequest />} />
+        <Route path="/reset-password" element={<PasswordResetConfirm />} />
+        <Route path="/magic-link" element={<MagicLinkConfirm />} />
+
+        {/* Authenticated routes — wrapped in MainLayout */}
+        <Route element={<MainLayout />}>
+          <Route index element={<Profile />} />
+          <Route path="/profile" element={<Profile />} />
           <Route
             path="/admin/users"
             element={
@@ -86,9 +95,10 @@ function App() {
               </PermissionRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/profile" replace />} />
-        </Routes>
-      </div>
+          <Route path="/friends" element={<ComingSoon title="Friends" />} />
+          <Route path="/settings" element={<ComingSoon title="Settings" />} />
+        </Route>
+      </Routes>
     </ConfigProvider>
   )
 }
