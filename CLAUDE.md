@@ -13,7 +13,7 @@ across platforms. It does not stream audio — it is a metadata and sharing laye
 /.claude/agents  → agent role definitions
 
 ## Tech stack
-- Frontend: React, TypeScript, Tailwind
+- Frontend: React, TypeScript, Ant Design (antd v6 + @ant-design/icons)
 - Backend: Node.js, Express, TypeScript
 - Database & auth: Supabase (Postgres + Auth)
 - Deployment: Render (both frontend and backend)
@@ -91,13 +91,14 @@ The ShareList UI uses a dark, premium aesthetic derived from the Figma reference
 The full design guide is at `.claude/design-system.md` — **all frontend work must follow it**.
 
 Key rules:
+- No Tailwind. No utility classes. Pure Ant Design + inline styles only.
+- App is wrapped in `<ConfigProvider>` with `theme.darkAlgorithm` and ShareList tokens.
 - Background `#111314`, surface cards `#1C1F21`, nav `#161819`
 - Primary accent `#38BDF8` (sky blue), secondary `#4ADE80` (mint)
 - Text primary `#F1F5F9`, muted `#64748B`, borders `#2A2D30`
-- Font: Inter (300/400/500/600/700)
-- Custom Tailwind tokens via `sl.*` namespace (e.g. `bg-sl-bg`, `text-sl-accent`)
-- Never use light-mode classes: `bg-white`, `bg-gray-50`, `text-gray-900`, `border-gray-200`, `focus:ring-gray-900`
-- See `.claude/design-system.md` for complete component patterns (inputs, buttons, modals, tables, badges)
+- Font: Inter (loaded via Google Fonts in `index.html`)
+- All styling via Ant Design component props and `style={{}}` inline styles
+- See `.claude/design-system.md` for ConfigProvider setup and component patterns
 
 ## Frontend architecture — API-only
 The frontend (`apps/web`) must never interact with Supabase directly. All data

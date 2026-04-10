@@ -1,166 +1,327 @@
 # ShareList Design System
 
-Derived from the official Figma mockup. All frontend screens must follow this guide exactly.
-The reference implementation lives in `_EXAMPLE FRONTEND/`.
+Derived from the official Figma mockup in `_EXAMPLE FRONTEND/`.
+**All frontend work must follow this guide.** No Tailwind. No utility classes. Pure Ant Design + inline styles.
 
-> **Note on token usage:** The Tailwind config defines `sl.*` color tokens, but custom tokens may fail
-> to render under Vite dev server caching. Always use the reliable alternatives listed below.
+---
+
+## Framework
+
+- **Library:** `antd` v6 + `@ant-design/icons`
+- **No Tailwind** — do not install or use any Tailwind utilities
+- **Styling:** Ant Design component props + `style={{}}` inline styles only
+- **Theme:** `ConfigProvider` with `theme.darkAlgorithm` + custom token overrides
+
+---
+
+## ConfigProvider Setup
+
+This lives in `apps/web/src/App.tsx` and wraps the entire app:
+
+```tsx
+import { ConfigProvider, theme } from 'antd'
+
+<ConfigProvider
+  theme={{
+    algorithm: theme.darkAlgorithm,
+    token: {
+      colorPrimary: '#38BDF8',
+      colorBgBase: '#111314',
+      colorBgContainer: '#1C1F21',
+      colorBorder: '#2A2D30',
+      colorText: '#F1F5F9',
+      colorTextSecondary: '#64748B',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      borderRadius: 8,
+    },
+    components: {
+      Button: { primaryColor: '#38BDF8' },
+      Input: { colorBgContainer: '#111314' },
+      Badge: { dotSize: 8 },
+    },
+  }}
+>
+```
+
+These tokens flow through all antd components automatically. Explicit `style={{}}` overrides are only needed for values outside the token system.
 
 ---
 
 ## Color Reference
 
-| Token | Hex | Use | Reliable class |
-|---|---|---|---|
-| `sl-bg` | `#111314` | Page/root background | `bg-[#111314]` |
-| `sl-surface` | `#1C1F21` | Cards, modals, elevated containers | `bg-[#1C1F21]` |
-| `sl-nav` | `#161819` | Top and bottom navigation bars | `bg-[#161819]` |
-| `sl-border` | `#2A2D30` | Dividers, input borders, table rows | `border-[#2A2D30]`, `divide-[#2A2D30]` |
-| `sl-accent` | `#38BDF8` | Interactive elements, active states, focus rings | `text-sky-400`, `bg-sky-400` |
-| `sl-mint` | `#4ADE80` | Success, sync indicators, "new" badges | `text-emerald-400`, `bg-emerald-400` |
-| `sl-text` | `#F1F5F9` | Primary text | `text-slate-100` |
-| `sl-muted` | `#64748B` | Secondary/helper text, inactive nav items | `text-slate-500` |
+| Name | Hex | Use |
+|---|---|---|
+| bg | `#111314` | Page/root background |
+| surface | `#1C1F21` | Cards, modals, elevated containers |
+| nav | `#161819` | Top navigation bar |
+| border | `#2A2D30` | Dividers, borders |
+| accent | `#38BDF8` | Primary interactive, links, focus rings |
+| mint | `#4ADE80` | Success states |
+| text | `#F1F5F9` | Primary text |
+| muted | `#64748B` | Secondary text, placeholders |
 
-### Status & semantic colors (dark-adapted)
-
-| Purpose | Classes |
-|---|---|
-| Error/destructive | `text-red-400`, `border-red-500/40`, `bg-red-500/10` |
-| Warning | `text-amber-400`, `bg-amber-500/10` |
-| Success | `text-emerald-400`, `bg-emerald-400/10`, `border-emerald-400/30` |
-| Info | `text-sky-400`, `bg-sky-400/10` |
-| Suspended badge | `bg-red-500/15 text-red-400` |
-| Active badge | `bg-emerald-400/15 text-emerald-400` |
-| Unverified label | `text-amber-400` |
+**In every file, define a local `SL` const rather than hardcoding hex strings:**
+```tsx
+const SL = {
+  bg: '#111314', surface: '#1C1F21', nav: '#161819', border: '#2A2D30',
+  accent: '#38BDF8', mint: '#4ADE80', text: '#F1F5F9', muted: '#64748B',
+}
+```
 
 ---
 
 ## Typography
 
-**Font family:** Inter (loaded from Google Fonts — `weights=300;400;500;600;700`)
+Use `antd` `Typography.*` components. Apply color and weight via `style`:
 
-| Role | Size | Weight | Letter-spacing | Color |
-|---|---|---|---|---|
-| Page heading | `text-2xl` | `font-bold` | default | `text-slate-100` |
-| Section heading | `text-lg` | `font-semibold` | default | `text-slate-100` |
-| Section label (uppercase) | `text-xs` | `font-semibold` | `tracking-wider` | `text-slate-500` |
-| Table header | `text-xs` | `font-medium` | `tracking-wide uppercase` | `text-slate-500` |
-| Body / form labels | `text-sm` | `font-medium` | default | `text-slate-100` |
-| Helper / secondary | `text-xs` | `font-normal` | default | `text-slate-500` |
-| Badges / pills | `text-xs` | `font-semibold` | `tracking-wide` | varies |
-| Nav labels | `text-xs` | `font-medium`/`font-semibold` (active) | default | `text-slate-500`/`text-sky-400` |
+```tsx
+import { Typography } from 'antd'
+
+<Typography.Title level={3} style={{ color: SL.text, marginTop: 0 }}>Heading</Typography.Title>
+<Typography.Text style={{ color: SL.muted, fontSize: 14 }}>Secondary text</Typography.Text>
+<Typography.Text style={{ color: SL.text, fontWeight: 600, fontSize: 18 }}>Strong</Typography.Text>
+
+// Section label (uppercase, small)
+<Typography.Text style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: SL.muted }}>
+  Section Label
+</Typography.Text>
+```
 
 ### Logo treatment
-
 ```tsx
-<span className="font-light text-slate-100">Share</span>
-<span className="font-bold text-sky-400">List</span>
+<Link to="/" style={{ textDecoration: 'none' }}>
+  <Typography.Text style={{ fontWeight: 300, color: SL.text, fontSize: 16 }}>Share</Typography.Text>
+  <Typography.Text style={{ fontWeight: 700, color: SL.accent, fontSize: 16 }}>List</Typography.Text>
+</Link>
 ```
 
 ---
 
-## Surface Hierarchy
+## Layout
 
-```
-Layer 0 — Root background:   bg-[#111314]
-  + radial-gradient top-left: rgba(56,189,248,0.06) → transparent
-Layer 1 — Cards/sections:    bg-[#1C1F21]
-  optional glass:            backdrop-blur-xl + border border-sky-400/10
-Layer 2 — Elevated (modal):  bg-[#1C1F21] shadow-2xl
-Layer 3 — Nav bars:          bg-[#161819] + border-[#2A2D30]
+Use `antd` layout primitives instead of Tailwind flex/grid:
+
+```tsx
+import { Flex, Space } from 'antd'
+
+// Flex row
+<Flex align="center" justify="space-between" gap={16}>...</Flex>
+
+// Flex column
+<Flex vertical gap={12}>...</Flex>
+
+// Space between items
+<Space size={8}>...</Space>
+<Space direction="vertical" size={20} style={{ width: '100%' }}>...</Space>
 ```
 
-### Root background gradient (App-level)
-```css
-background: #111314;
-background-image: radial-gradient(circle at 20% 10%, rgba(56,189,248,0.06) 0%, rgba(56,189,248,0.02) 40%, transparent 70%);
+For page containers use inline styles:
+```tsx
+// Narrow page (auth, profile)
+<div style={{ maxWidth: 448, margin: '0 auto', padding: '48px 16px' }}>
+
+// Wide page (admin)
+<div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 24px' }}>
 ```
 
 ---
 
-## Glass Card Pattern
-
-Used for primary content cards (hero sections, elevated surfaces):
+## Surfaces
 
 ```tsx
-className="bg-[#1C1F21]/80 backdrop-blur-xl border border-sky-400/10 rounded-[20px]"
+// Card / elevated container
+<div style={{
+  backgroundColor: SL.surface,
+  border: `1px solid ${SL.border}`,
+  borderRadius: 20,
+  padding: 24,
+  boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+}}>
+
+// Nav bar
+<nav style={{
+  backgroundColor: SL.nav,
+  borderBottom: `1px solid ${SL.border}`,
+  padding: '12px 24px',
+  position: 'sticky',
+  top: 0,
+  zIndex: 100,
+}}>
+
+// Root background (set on App wrapper div)
+<div style={{
+  minHeight: '100vh',
+  backgroundColor: SL.bg,
+  backgroundImage: 'radial-gradient(circle at 20% 10%, rgba(56,189,248,0.06) 0%, rgba(56,189,248,0.02) 40%, transparent 70%)',
+}}>
 ```
-
-For standard (non-glass) cards:
-```tsx
-className="bg-[#1C1F21] border border-[#2A2D30] rounded-[20px]"
-```
-
----
-
-## Border Radii
-
-| Element | Radius |
-|---|---|
-| Page cards / containers | `rounded-[20px]` |
-| Modals | `rounded-2xl` |
-| Buttons (standard) | `rounded-xl` |
-| Inputs | `rounded-xl` |
-| Small buttons / badges | `rounded-lg` |
-| Pills / status badges | `rounded-full` |
-| Avatar circles | `rounded-full` |
-| Album art / thumbnails | `rounded-[6px]` |
-
----
-
-## Inputs
-
-```tsx
-className="
-  bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100
-  placeholder:text-slate-500 w-full
-  focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50
-  disabled:opacity-40 disabled:cursor-not-allowed
-  transition-colors
-"
-```
-
-Labels:
-```tsx
-className="block text-sm font-medium text-slate-100 mb-1.5"
-```
-
-> **Webkit autofill:** `apps/web/src/index.css` already contains a `-webkit-box-shadow` override to
-> prevent the browser from overriding dark input backgrounds when autofill triggers.
 
 ---
 
 ## Buttons
 
-### Primary (filled accent)
+Use the antd `Button` component. Do not write `<button>` elements.
+
 ```tsx
-className="
-  bg-sky-400 text-[#111314] px-4 py-2.5 rounded-xl text-sm font-semibold
-  hover:bg-sky-400/90 disabled:opacity-40 disabled:cursor-not-allowed
-  transition-colors
-"
+import { Button } from 'antd'
+
+// Primary
+<Button type="primary" size="large" style={{ borderRadius: 12, fontWeight: 600 }}>Save</Button>
+
+// Default (outlined)
+<Button style={{ borderRadius: 8, borderColor: SL.border, color: SL.muted }}>Cancel</Button>
+
+// Danger
+<Button danger style={{ borderRadius: 8 }}>Delete</Button>
+
+// Ghost / link style
+<Button type="link" style={{ color: SL.muted, padding: 0 }}>Sign out</Button>
+
+// Small action button
+<Button size="small" style={{ borderRadius: 8, borderColor: SL.border, color: SL.muted }}>Manage</Button>
+
+// Loading state
+<Button type="primary" loading={loading}>Save</Button>
 ```
 
-### Secondary (outlined)
+---
+
+## Form Inputs
+
+Use `antd` `Form`, `Input`, `Input.Password`. Do not write raw `<input>` elements.
+
 ```tsx
-className="
-  border border-[#2A2D30] text-slate-100 px-4 py-2.5 rounded-xl text-sm font-medium
-  hover:bg-[#1C1F21] hover:border-sky-400/30 disabled:opacity-40
-  transition-colors
-"
+import { Form, Input } from 'antd'
+
+<Form layout="vertical" onFinish={handleFinish} requiredMark={false}>
+  <Form.Item
+    name="email"
+    label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Email</span>}
+    rules={[{ required: true, type: 'email' }]}
+  >
+    <Input placeholder="you@example.com" size="large" style={{ borderRadius: 12 }} />
+  </Form.Item>
+
+  <Form.Item
+    name="password"
+    label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Password</span>}
+    rules={[{ required: true, min: 6 }]}
+  >
+    <Input.Password placeholder="Min 6 characters" size="large" style={{ borderRadius: 12 }} />
+  </Form.Item>
+</Form>
 ```
 
-### Destructive
+---
+
+## Auth Card Layout
+
 ```tsx
-className="
-  bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2.5 rounded-xl text-sm font-medium
-  hover:bg-red-500/20 disabled:opacity-40 transition-colors
-"
+<Flex justify="center" align="center" style={{ minHeight: 'calc(100vh - 57px)', padding: 16 }}>
+  <div style={{
+    width: '100%',
+    maxWidth: 448,
+    backgroundColor: SL.surface,
+    border: `1px solid ${SL.border}`,
+    borderRadius: 20,
+    padding: 32,
+    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+  }}>
+    <Typography.Title level={3} style={{ color: SL.text, marginBottom: 4, marginTop: 0 }}>...</Typography.Title>
+    <Typography.Text style={{ color: SL.muted, fontSize: 14, display: 'block', marginBottom: 32 }}>...</Typography.Text>
+    {/* Form */}
+  </div>
+</Flex>
 ```
 
-### Ghost / text link
+---
+
+## Alerts / Feedback
+
 ```tsx
-className="text-sky-400 text-sm font-medium hover:text-sky-400/80 transition-colors"
+import { Alert } from 'antd'
+
+<Alert message="Error message" type="error" showIcon style={{ borderRadius: 10 }} />
+<Alert message="Success!" type="success" showIcon style={{ borderRadius: 10 }} />
+
+// Inline success text (compact)
+<Typography.Text style={{ color: SL.mint, fontWeight: 500, fontSize: 14 }}>✓ Saved</Typography.Text>
+```
+
+---
+
+## Table
+
+```tsx
+import { Table } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
+
+const columns: ColumnsType<MyRow> = [
+  {
+    title: 'Name',
+    key: 'name',
+    render: (_, row) => <Typography.Text style={{ color: SL.text }}>{row.name}</Typography.Text>,
+  },
+]
+
+<Table
+  dataSource={rows}
+  columns={columns}
+  rowKey="id"
+  pagination={false}
+  style={{ borderRadius: 20, overflow: 'hidden' }}
+/>
+```
+
+Column headers automatically use `colorTextSecondary`. Row backgrounds use `colorBgContainer` from ConfigProvider.
+
+---
+
+## Modal (Manage panels)
+
+```tsx
+import { Modal } from 'antd'
+
+<Modal
+  open={isOpen}
+  onCancel={onClose}
+  width={640}
+  footer={<Button onClick={onClose} style={{ borderRadius: 8, borderColor: SL.border, color: SL.muted }}>Close</Button>}
+  title={/* custom header content */}
+  styles={{
+    header: { backgroundColor: SL.surface, borderBottom: `1px solid ${SL.border}`, padding: '20px 24px' },
+    body: { padding: 0, maxHeight: '70vh', overflowY: 'auto' },
+    footer: { backgroundColor: `${SL.bg}50`, borderTop: `1px solid ${SL.border}`, padding: '12px 24px' },
+  }}
+>
+  {/* Sections separated by manual Divider */}
+  <div style={{ padding: '20px 24px' }}>
+    {/* section content */}
+  </div>
+</Modal>
+
+// Section divider (between modal sections — avoids trailing bottom border)
+function Divider() {
+  return <div style={{ height: 1, backgroundColor: `${SL.border}80`, margin: '0 -24px' }} />
+}
+```
+
+---
+
+## Tags / Badges
+
+```tsx
+import { Tag } from 'antd'
+
+// Status
+<Tag color="success" style={{ borderRadius: 20, fontWeight: 600 }}>active</Tag>
+<Tag color="error" style={{ borderRadius: 20, fontWeight: 600 }}>suspended</Tag>
+<Tag color="warning" style={{ borderRadius: 20, fontWeight: 600 }}>unverified</Tag>
+
+// Permission / info pill
+<Tag color="processing" style={{ borderRadius: 6, fontSize: 11, fontWeight: 500 }}>
+  {permission.replace('usermanage:', '')}
+</Tag>
 ```
 
 ---
@@ -168,170 +329,107 @@ className="text-sky-400 text-sm font-medium hover:text-sky-400/80 transition-col
 ## Toggle Switch
 
 ```tsx
-// Outer button
-className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors
-  focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400
-  disabled:cursor-not-allowed disabled:opacity-40
-  ${active ? 'bg-sky-400' : 'bg-[#2A2D30]'}`}
+import { Switch } from 'antd'
 
-// Inner knob
-className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform
-  ${active ? 'translate-x-6' : 'translate-x-1'}`}
+<Switch
+  checked={isActive}
+  disabled={!canEdit}
+  onChange={checked => setIsActive(checked)}
+/>
+```
+
+Ant Design's `Switch` uses `colorPrimary` from ConfigProvider for the active state automatically.
+
+---
+
+## Avatar
+
+```tsx
+import { Avatar } from 'antd'
+import { UserOutlined } from '@ant-design/icons'
+
+<Avatar
+  size={56}
+  icon={<UserOutlined />}
+  style={{
+    backgroundColor: 'rgba(56,189,248,0.15)',
+    border: '1px solid rgba(56,189,248,0.3)',
+    color: SL.accent,
+    fontWeight: 700,
+  }}
+>
+  {initials}
+</Avatar>
 ```
 
 ---
 
-## Status Badges
+## Danger Zone
 
 ```tsx
-// Active / success
-className="bg-emerald-400/15 text-emerald-400 border border-emerald-400/30 px-2.5 py-0.5 rounded-full text-xs font-semibold"
-
-// Suspended / error
-className="bg-red-500/15 text-red-400 border border-red-500/30 px-2.5 py-0.5 rounded-full text-xs font-semibold"
-
-// Warning / unverified
-className="bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-full text-xs font-semibold"
-
-// Info pill (permissions)
-className="bg-sky-400/10 text-sky-400 px-2 py-0.5 rounded-md text-xs font-semibold"
-```
-
----
-
-## Auth / Form Card Layout
-
-Used for: Sign In, Sign Up, Password Reset pages.
-
-```tsx
-// Page wrapper
-<div className="min-h-[calc(100vh-57px)] flex items-center justify-center p-4">
-  {/* Card */}
-  <div className="w-full max-w-md bg-[#1C1F21] border border-[#2A2D30] rounded-[20px] p-8 shadow-2xl">
-    <h1 className="text-2xl font-bold text-slate-100 mb-1">...</h1>
-    <p className="text-sm text-slate-500 mb-8">...</p>
-    {/* form */}
+{/* Initial state */}
+<Flex align="center" justify="space-between" style={{
+  padding: 16, borderRadius: 12,
+  border: '1px solid rgba(239,68,68,0.2)',
+  backgroundColor: 'rgba(239,68,68,0.05)',
+}}>
+  <div>
+    <Typography.Text style={{ color: '#fca5a5', fontWeight: 500, fontSize: 14, display: 'block' }}>
+      Delete this account
+    </Typography.Text>
+    <Typography.Text style={{ color: '#f87171', fontSize: 12 }}>
+      Permanently removes the user and all their data
+    </Typography.Text>
   </div>
+  <Button danger size="small" onClick={() => setConfirm(true)} style={{ borderRadius: 8, marginLeft: 16 }}>
+    Delete user
+  </Button>
+</Flex>
+
+{/* Confirm state */}
+<div style={{
+  padding: 16, borderRadius: 12,
+  border: '1px solid rgba(239,68,68,0.3)',
+  backgroundColor: 'rgba(239,68,68,0.1)',
+}}>
+  <Typography.Text style={{ color: '#fca5a5', fontWeight: 600, display: 'block', marginBottom: 8 }}>
+    This cannot be undone
+  </Typography.Text>
+  <Flex gap={8} style={{ marginTop: 16 }}>
+    <Button danger loading={loading} onClick={onDelete} style={{ borderRadius: 8 }}>
+      Yes, delete permanently
+    </Button>
+    <Button onClick={() => setConfirm(false)} style={{ borderRadius: 8, borderColor: SL.border, color: SL.muted }}>
+      Cancel
+    </Button>
+  </Flex>
 </div>
 ```
 
 ---
 
-## Navigation (Top Bar)
+## Loading / Empty States
 
 ```tsx
-<nav className="bg-[#161819] border-b border-[#2A2D30] px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
-  {/* Logo */}
-  <Link to="/">
-    <span className="font-light text-slate-100">Share</span>
-    <span className="font-bold text-sky-400">List</span>
-  </Link>
+import { Spin, Flex } from 'antd'
 
-  {/* Links: text-slate-500 hover:text-slate-100 */}
-  {/* Active link: text-sky-400 */}
-  {/* Sign out: text-slate-500 hover:text-red-400 */}
-</nav>
+// Full-screen loading
+<Flex justify="center" align="center" style={{ minHeight: '100vh' }}>
+  <Spin size="large" />
+</Flex>
+
+// Section spinner
+<Flex justify="center" style={{ padding: 40 }}>
+  <Spin />
+</Flex>
 ```
-
----
-
-## Data Tables (Admin)
-
-```tsx
-// Container
-className="bg-[#1C1F21] border border-[#2A2D30] rounded-[20px] overflow-hidden"
-
-// Header row
-className="border-b border-[#2A2D30] bg-[#111314]/50"
-
-// Header cell
-className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide"
-
-// Body row
-className="border-b border-[#2A2D30]/50 last:border-0 hover:bg-sky-400/5 transition-colors"
-
-// Body cell
-className="px-4 py-3 text-sm text-slate-100"
-```
-
----
-
-## Modal
-
-```tsx
-// Overlay
-className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-
-// Dialog
-className="bg-[#1C1F21] border border-[#2A2D30] rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]"
-
-// Header
-className="px-6 py-5 border-b border-[#2A2D30] flex items-center gap-4"
-
-// Body — use divide-y to avoid trailing bottom border on last section
-className="overflow-y-auto flex-1 divide-y divide-[#2A2D30]/50"
-
-// Section
-className="px-6 py-5"
-
-// Section label
-className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4"
-
-// Footer
-className="px-6 py-4 border-t border-[#2A2D30] bg-[#111314]/30 rounded-b-2xl flex justify-end"
-```
-
----
-
-## Danger Zone (Modal Section)
-
-```tsx
-// Section title
-className="text-xs font-semibold uppercase tracking-wider text-red-400 mb-4"
-
-// Container
-className="flex items-center justify-between p-4 rounded-xl border border-red-500/20 bg-red-500/5"
-
-// Confirm state
-className="p-4 rounded-xl border border-red-500/30 bg-red-500/10 space-y-3"
-```
-
----
-
-## Focus Ring
-
-All focusable elements: `focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60`
-
----
-
-## Spacing Conventions
-
-| Context | Pattern |
-|---|---|
-| Page container (narrow) | `max-w-md mx-auto px-4 py-12` |
-| Page container (wide/admin) | `max-w-5xl mx-auto px-6 py-10` |
-| Card internal padding | `p-6` or `p-8` (auth) |
-| Section padding (modal) | `px-6 py-5` |
-| Form field gap | `space-y-4` or `flex flex-col gap-4` |
-| Inline row gap | `gap-3` or `gap-4` |
-
----
-
-## Transitions & Interaction
-
-- **Default transition:** `transition-colors duration-150`
-- **Button press:** subtle opacity or background shift via hover class
-- **Row hover:** `hover:bg-sky-400/5`
-- **Icon hover opacity:** `opacity-50 hover:opacity-100 transition-opacity`
 
 ---
 
 ## Do Not Use
 
-- `bg-white`, `bg-gray-50`, `bg-gray-100` — these are light-mode colors
-- `text-gray-900`, `text-gray-800`, `text-gray-700` — use `text-slate-100` instead
-- `text-gray-500`, `text-gray-600` — use `text-slate-500` instead
-- `border-gray-200`, `border-gray-300` — use `border-[#2A2D30]` instead
-- `bg-gray-900 text-white` for buttons — use the accent button pattern above
-- `focus:ring-gray-900` — use `focus:ring-sky-400/50` instead
-- Any `sl-*` Tailwind token (e.g. `bg-sl-bg`, `text-sl-text`) — use the reliable classes above
+- Any Tailwind utility class (`flex`, `text-sm`, `bg-sky-400`, etc.)
+- Raw `<button>`, `<input>`, `<select>` elements — use antd equivalents
+- `bg-white`, `text-gray-*`, `border-gray-*` — these are light-mode
+- Custom CSS classes or CSS modules — use inline `style={{}}`
+- `sl-*` Tailwind token names — they no longer exist
