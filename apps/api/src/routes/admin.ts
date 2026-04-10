@@ -142,6 +142,50 @@ router.post('/:id/resend-verification', requireAdmin, async (req: Request, res: 
   res.json(result)
 })
 
+// POST /admin/users/:id/unverify — clear email confirmation (admin role)
+router.post('/:id/unverify', requireAdmin, async (req: Request, res: Response) => {
+  const id = req.params['id'] as string
+
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { email_confirm: false })
+  if (error) {
+    log('error', 'Unverify user failed', { adminId: req.user!.id, targetId: id, error: error.message })
+    const err: ApiError = { data: null, error: { message: error.message } }
+    res.status(500).json(err)
+    return
+  }
+
+  log('info', 'User email unverified by admin', { adminId: req.user!.id, targetId: id })
+  const result: ApiResult<{ success: boolean }> = { data: { success: true }, error: null }
+  res.json(result)
+})
+
+// POST /admin/users/:id/magic-link — send a magic login link to the user's email (admin role)
+router.post('/:id/magic-link', requireAdmin, async (req: Request, res: Response) => {
+  const id = req.params['id'] as string
+
+  const { data: { user }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(id)
+  if (getUserError || !user?.email) {
+    const err: ApiError = { data: null, error: { message: 'User not found' } }
+    res.status(404).json(err)
+    return
+  }
+
+  const { error } = await supabaseAdmin.auth.signInWithOtp({
+    email: user.email,
+    options: { shouldCreateUser: false },
+  })
+  if (error) {
+    log('error', 'Magic link send failed', { adminId: req.user!.id, targetId: id, error: error.message })
+    const err: ApiError = { data: null, error: { message: error.message } }
+    res.status(500).json(err)
+    return
+  }
+
+  log('info', 'Magic link sent by admin', { adminId: req.user!.id, targetId: id })
+  const result: ApiResult<{ success: boolean }> = { data: { success: true }, error: null }
+  res.json(result)
+})
+
 // PATCH /admin/users/:id — update display_name and/or avatar_url for any user (admin role)
 router.patch('/:id', requireAdmin, async (req: Request, res: Response) => {
   const id = req.params['id'] as string

@@ -51,6 +51,9 @@ export function AdminUsers() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
+  const [unverifyLoading, setUnverifyLoading] = useState(false)
+  const [magicLinkLoading, setMagicLinkLoading] = useState(false)
+  const [magicLinkSuccess, setMagicLinkSuccess] = useState(false)
 
   const canAdd = me?.permissions.includes('usermanage:add') ?? false
   const canSuspend = me?.permissions.includes('usermanage:suspend') ?? false
@@ -77,6 +80,7 @@ export function AdminUsers() {
     setPermError(null); setPermSuccess(false)
     setDeleteConfirm(false)
     setResendSuccess(false)
+    setMagicLinkSuccess(false)
   }
 
   const closeManage = () => setTarget(null)
@@ -158,6 +162,25 @@ export function AdminUsers() {
     if (api.isError(result)) { setPermError(result.error.message); return }
     setPermSuccess(true)
     await reloadAndSync(target.id)
+  }
+
+  const handleUnverify = async () => {
+    if (!target) return
+    setUnverifyLoading(true)
+    const result = await api.unverifyUser(target.id)
+    setUnverifyLoading(false)
+    if (api.isError(result)) { alert(result.error.message); return }
+    await reloadAndSync(target.id)
+  }
+
+  const handleMagicLink = async () => {
+    if (!target) return
+    setMagicLinkLoading(true)
+    setMagicLinkSuccess(false)
+    const result = await api.sendMagicLink(target.id)
+    setMagicLinkLoading(false)
+    if (api.isError(result)) { alert(result.error.message); return }
+    setMagicLinkSuccess(true)
   }
 
   const handleResendVerification = async () => {
@@ -342,27 +365,46 @@ export function AdminUsers() {
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Account</h3>
                 <div className="flex flex-wrap gap-3">
                   {isAdmin && (
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-medium ${target.emailConfirmed ? 'text-green-600' : 'text-amber-600'}`}>
-                        {target.emailConfirmed ? 'Email verified' : 'Email unverified'}
-                      </span>
-                      {!target.emailConfirmed && (
-                        <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs font-medium ${target.emailConfirmed ? 'text-green-600' : 'text-amber-600'}`}>
+                          {target.emailConfirmed ? 'Email verified' : 'Email unverified'}
+                        </span>
+                        {!target.emailConfirmed && (
+                          <>
+                            <button
+                              onClick={handleVerify} disabled={verifyLoading}
+                              className="text-xs px-3 py-1.5 rounded border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-50"
+                            >
+                              {verifyLoading ? 'Verifying…' : 'Mark as verified'}
+                            </button>
+                            <button
+                              onClick={handleResendVerification} disabled={resendLoading}
+                              className="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              {resendLoading ? 'Sending…' : 'Resend verification email'}
+                            </button>
+                            {resendSuccess && <span className="text-xs text-green-600">Sent.</span>}
+                          </>
+                        )}
+                        {target.emailConfirmed && (
                           <button
-                            onClick={handleVerify} disabled={verifyLoading}
-                            className="text-xs px-3 py-1.5 rounded border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-50"
+                            onClick={handleUnverify} disabled={unverifyLoading}
+                            className="text-xs px-3 py-1.5 rounded border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-50"
                           >
-                            {verifyLoading ? 'Verifying…' : 'Mark as verified'}
+                            {unverifyLoading ? '…' : 'Unvalidate email'}
                           </button>
-                          <button
-                            onClick={handleResendVerification} disabled={resendLoading}
-                            className="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                          >
-                            {resendLoading ? 'Sending…' : 'Resend verification email'}
-                          </button>
-                          {resendSuccess && <span className="text-xs text-green-600">Sent.</span>}
-                        </div>
-                      )}
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleMagicLink} disabled={magicLinkLoading}
+                          className="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          {magicLinkLoading ? 'Sending…' : 'Send magic login link'}
+                        </button>
+                        {magicLinkSuccess && <span className="text-xs text-green-600">Sent.</span>}
+                      </div>
                     </div>
                   )}
                   {canSuspend && !isSelf && (

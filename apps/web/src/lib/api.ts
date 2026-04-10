@@ -142,6 +142,14 @@ export function deleteAdminUser(id: string): Promise<ApiResult<{ success: boolea
   return request<{ success: boolean }>(`/admin/users/${id}`, { method: 'DELETE' })
 }
 
+export function unverifyUser(id: string): Promise<ApiResult<{ success: boolean }>> {
+  return request<{ success: boolean }>(`/admin/users/${id}/unverify`, { method: 'POST' })
+}
+
+export function sendMagicLink(id: string): Promise<ApiResult<{ success: boolean }>> {
+  return request<{ success: boolean }>(`/admin/users/${id}/magic-link`, { method: 'POST' })
+}
+
 export function resendVerificationEmail(id: string): Promise<ApiResult<{ success: boolean }>> {
   return request<{ success: boolean }>(`/admin/users/${id}/resend-verification`, { method: 'POST' })
 }
