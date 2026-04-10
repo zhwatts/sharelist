@@ -1,21 +1,27 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Button, Flex, Form, Input, Typography, Alert } from 'antd'
 import { useAuth } from '../context/AuthContext'
+
+const SL = {
+  surface: '#1C1F21',
+  border: '#2A2D30',
+  accent: '#38BDF8',
+  text: '#F1F5F9',
+  muted: '#64748B',
+}
 
 export function SignUp() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleFinish = async (values: { email: string; password: string }) => {
     setError(null)
     setLoading(true)
-    const err = await signUp(email, password)
+    const err = await signUp(values.email, values.password)
     setLoading(false)
     if (err) { setError(err); return }
     setSuccess(true)
@@ -23,47 +29,78 @@ export function SignUp() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-57px)] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#1C1F21] border border-[#2A2D30] rounded-[20px] p-8 shadow-2xl">
-        <h1 className="text-2xl font-bold text-slate-100 mb-1">Create account</h1>
-        <p className="text-sm text-slate-500 mb-8">Join ShareList and start sharing playlists</p>
+    <Flex justify="center" align="center" style={{ minHeight: 'calc(100vh - 57px)', padding: 16 }}>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 448,
+          backgroundColor: SL.surface,
+          border: `1px solid ${SL.border}`,
+          borderRadius: 20,
+          padding: 32,
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+        }}
+      >
+        <Typography.Title level={3} style={{ color: SL.text, marginBottom: 4, marginTop: 0 }}>
+          Create account
+        </Typography.Title>
+        <Typography.Text style={{ color: SL.muted, fontSize: 14, display: 'block', marginBottom: 32 }}>
+          Join ShareList and start sharing playlists
+        </Typography.Text>
 
         {success ? (
-          <p className="text-emerald-400 text-sm font-medium">Account created! Redirecting…</p>
+          <Alert
+            message="Account created! Redirecting…"
+            type="success"
+            showIcon
+            style={{ borderRadius: 10 }}
+          />
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-100 mb-1.5">Email</label>
-              <input
-                type="email" placeholder="you@example.com" value={email} required
-                onChange={e => setEmail(e.target.value)}
-                className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-100 mb-1.5">Password</label>
-              <input
-                type="password" placeholder="Min 6 characters" value={password} required minLength={6}
-                onChange={e => setPassword(e.target.value)}
-                className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors"
-              />
-            </div>
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button
-              type="submit" disabled={loading}
-              className="bg-sky-400 text-[#111314] py-2.5 rounded-xl text-sm font-semibold hover:bg-sky-400/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors mt-1"
+          <Form layout="vertical" onFinish={handleFinish} requiredMark={false}>
+            <Form.Item
+              name="email"
+              label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Email</span>}
+              rules={[{ required: true, type: 'email' }]}
             >
-              {loading ? 'Creating account…' : 'Create account'}
-            </button>
-          </form>
+              <Input placeholder="you@example.com" size="large" style={{ borderRadius: 12 }} />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Password</span>}
+              rules={[{ required: true, min: 6, message: 'Minimum 6 characters' }]}
+            >
+              <Input.Password placeholder="Min 6 characters" size="large" style={{ borderRadius: 12 }} />
+            </Form.Item>
+
+            {error && (
+              <Form.Item>
+                <Alert message={error} type="error" showIcon style={{ borderRadius: 10 }} />
+              </Form.Item>
+            )}
+
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                loading={loading}
+                block
+                style={{ borderRadius: 12, fontWeight: 600 }}
+              >
+                Create account
+              </Button>
+            </Form.Item>
+          </Form>
         )}
 
-        <p className="mt-6 text-sm">
-          <Link to="/signin" className="text-slate-500 hover:text-sky-400 transition-colors">
-            Already have an account? <span className="text-sky-400">Sign in</span>
+        <div style={{ marginTop: 24 }}>
+          <Link to="/signin" style={{ color: SL.muted, fontSize: 14, textDecoration: 'none' }}>
+            Already have an account?{' '}
+            <span style={{ color: SL.accent }}>Sign in</span>
           </Link>
-        </p>
+        </div>
       </div>
-    </div>
+    </Flex>
   )
 }

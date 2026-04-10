@@ -1,3 +1,4 @@
+import { ConfigProvider, theme } from 'antd'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Nav } from './components/Nav'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -9,27 +10,67 @@ import { PasswordResetConfirm } from './pages/PasswordResetConfirm'
 import { Profile } from './pages/Profile'
 import { AdminUsers } from './pages/AdminUsers'
 
+const SL = {
+  bg: '#111314',
+  surface: '#1C1F21',
+  nav: '#161819',
+  border: '#2A2D30',
+  accent: '#38BDF8',
+  mint: '#4ADE80',
+  text: '#F1F5F9',
+  muted: '#64748B',
+}
+
 function App() {
   return (
-    <div className="min-h-screen bg-[#111314] font-sans" style={{ backgroundImage: 'radial-gradient(circle at 20% 10%, rgba(56,189,248,0.06) 0%, rgba(56,189,248,0.02) 40%, transparent 70%)' }}>
-      <Nav />
-      <Routes>
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/forgot-password" element={<PasswordResetRequest />} />
-        <Route path="/reset-password" element={<PasswordResetConfirm />} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route
-          path="/admin/users"
-          element={
-            <PermissionRoute permission="usermanage:listusers">
-              <AdminUsers />
-            </PermissionRoute>
-          }
-        />
-        <Route path="/" element={<Navigate to="/profile" replace />} />
-      </Routes>
-    </div>
+    <ConfigProvider
+      theme={{
+        algorithm: theme.darkAlgorithm,
+        token: {
+          colorPrimary: SL.accent,
+          colorBgBase: SL.bg,
+          colorBgContainer: SL.surface,
+          colorBorder: SL.border,
+          colorText: SL.text,
+          colorTextSecondary: SL.muted,
+          fontFamily: 'Inter, system-ui, sans-serif',
+          borderRadius: 8,
+        },
+        components: {
+          Button: { primaryColor: SL.accent },
+          Input: { colorBgContainer: SL.bg },
+          Badge: { dotSize: 8 },
+        },
+      }}
+    >
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: SL.bg,
+          fontFamily: 'Inter, system-ui, sans-serif',
+          backgroundImage:
+            'radial-gradient(circle at 20% 10%, rgba(56,189,248,0.06) 0%, rgba(56,189,248,0.02) 40%, transparent 70%)',
+        }}
+      >
+        <Nav />
+        <Routes>
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/forgot-password" element={<PasswordResetRequest />} />
+          <Route path="/reset-password" element={<PasswordResetConfirm />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route
+            path="/admin/users"
+            element={
+              <PermissionRoute permission="usermanage:listusers">
+                <AdminUsers />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/profile" replace />} />
+        </Routes>
+      </div>
+    </ConfigProvider>
   )
 }
 

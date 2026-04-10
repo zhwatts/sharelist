@@ -1,7 +1,33 @@
 import { useEffect, useState } from 'react'
+import {
+  Alert,
+  Avatar,
+  Button,
+  Flex,
+  Form,
+  Input,
+  Modal,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  Typography,
+} from 'antd'
+import type { ColumnsType } from 'antd/es/table'
+import { CloseOutlined, UserOutlined } from '@ant-design/icons'
 import { useAuth } from '../context/AuthContext'
 import * as api from '../lib/api'
 import type { AdminUser } from '../lib/api'
+
+const SL = {
+  bg: '#111314',
+  surface: '#1C1F21',
+  border: '#2A2D30',
+  accent: '#38BDF8',
+  mint: '#4ADE80',
+  text: '#F1F5F9',
+  muted: '#64748B',
+}
 
 const PERMISSION_META = [
   { key: 'usermanage:listusers', label: 'View users', description: 'Can access the user management page' },
@@ -13,41 +39,55 @@ const PERMISSION_META = [
   { key: 'usermanage:selfmanage', label: 'Full self-management', description: 'Can manage all aspects of their own account, including their own permissions' },
 ]
 
+function SectionLabel({ children, danger }: { children: React.ReactNode; danger?: boolean }) {
+  return (
+    <Typography.Text
+      style={{
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        color: danger ? '#f87171' : SL.muted,
+        display: 'block',
+        marginBottom: 16,
+      }}
+    >
+      {children}
+    </Typography.Text>
+  )
+}
+
+function Divider() {
+  return <div style={{ height: 1, backgroundColor: `${SL.border}80`, margin: '0 -24px' }} />
+}
+
 export function AdminUsers() {
   const { user: me } = useAuth()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  // Add user form
   const [showAddForm, setShowAddForm] = useState(false)
-  const [addEmail, setAddEmail] = useState('')
-  const [addPassword, setAddPassword] = useState('')
+  const [addForm] = Form.useForm()
   const [addError, setAddError] = useState<string | null>(null)
   const [addLoading, setAddLoading] = useState(false)
 
-  // Unified manage modal
   const [target, setTarget] = useState<AdminUser | null>(null)
 
-  // Profile section
-  const [displayName, setDisplayName] = useState('')
-  const [avatarUrl, setAvatarUrl] = useState('')
+  const [profileForm] = Form.useForm()
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [profileSuccess, setProfileSuccess] = useState(false)
 
-  // Password section
-  const [newPassword, setNewPassword] = useState('')
+  const [pwdForm] = Form.useForm()
   const [pwdLoading, setPwdLoading] = useState(false)
   const [pwdError, setPwdError] = useState<string | null>(null)
   const [pwdSuccess, setPwdSuccess] = useState(false)
 
-  // Permissions section
   const [permSelection, setPermSelection] = useState<string[]>([])
   const [permLoading, setPermLoading] = useState(false)
   const [permError, setPermError] = useState<string | null>(null)
   const [permSuccess, setPermSuccess] = useState(false)
 
-  // Inline action loading
   const [suspendLoading, setSuspendLoading] = useState(false)
   const [verifyLoading, setVerifyLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
@@ -66,10 +106,7 @@ export function AdminUsers() {
   const canSelfManage = me?.permissions.includes('usermanage:selfmanage') ?? false
   const isAdmin = me?.role === 'admin'
   const isSelf = target?.id === me?.id
-  // canActOnTarget: true when the viewer can take actions on this specific user
-  // (either because it's not themselves, or because they hold usermanage:selfmanage)
   const canActOnTarget = !isSelf || canSelfManage
-  // readOnly: can view the modal but has no write permissions applicable to this user
   const readOnly = !isAdmin && !canSuspend && !canResetPassword && !canEditPermissions && !canDelete && !(canSelfManage && isSelf)
 
   const load = async () => {
@@ -82,10 +119,9 @@ export function AdminUsers() {
 
   const openManage = (u: AdminUser) => {
     setTarget(u)
-    setDisplayName(u.displayName ?? '')
-    setAvatarUrl(u.avatarUrl ?? '')
+    profileForm.setFieldsValue({ displayName: u.displayName ?? '', avatarUrl: u.avatarUrl ?? '' })
+    pwdForm.resetFields()
     setPermSelection(u.permissions)
-    setNewPassword('')
     setProfileError(null); setProfileSuccess(false)
     setPwdError(null); setPwdSuccess(false)
     setPermError(null); setPermSuccess(false)
@@ -104,21 +140,20 @@ export function AdminUsers() {
     if (updated) { setTarget(updated); setPermSelection(updated.permissions) }
   }
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleAdd = async (values: { email: string; password: string }) => {
     setAddError(null); setAddLoading(true)
-    const result = await api.createAdminUser(addEmail, addPassword)
+    const result = await api.createAdminUser(values.email, values.password)
     setAddLoading(false)
     if (api.isError(result)) { setAddError(result.error.message); return }
-    setAddEmail(''); setAddPassword(''); setShowAddForm(false)
+    addForm.resetFields()
+    setShowAddForm(false)
     await load()
   }
 
-  const handleProfileSave = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleProfileSave = async (values: { displayName: string; avatarUrl?: string }) => {
     if (!target) return
     setProfileError(null); setProfileSuccess(false); setProfileLoading(true)
-    const result = await api.adminUpdateUser(target.id, { display_name: displayName, avatar_url: avatarUrl })
+    const result = await api.adminUpdateUser(target.id, { display_name: values.displayName, avatar_url: values.avatarUrl })
     setProfileLoading(false)
     if (api.isError(result)) { setProfileError(result.error.message); return }
     setProfileSuccess(true)
@@ -131,7 +166,7 @@ export function AdminUsers() {
     const fn = target.status === 'suspended' ? api.unsuspendUser : api.suspendUser
     const result = await fn(target.id)
     setSuspendLoading(false)
-    if (api.isError(result)) { alert(result.error.message); return }
+    if (api.isError(result)) return
     await reloadAndSync(target.id)
   }
 
@@ -140,7 +175,7 @@ export function AdminUsers() {
     setVerifyLoading(true)
     const result = await api.verifyUser(target.id)
     setVerifyLoading(false)
-    if (api.isError(result)) { alert(result.error.message); return }
+    if (api.isError(result)) return
     await reloadAndSync(target.id)
   }
 
@@ -149,7 +184,7 @@ export function AdminUsers() {
     setUnverifyLoading(true)
     const result = await api.unverifyUser(target.id)
     setUnverifyLoading(false)
-    if (api.isError(result)) { alert(result.error.message); return }
+    if (api.isError(result)) return
     await reloadAndSync(target.id)
   }
 
@@ -158,7 +193,7 @@ export function AdminUsers() {
     setMagicLinkLoading(true); setMagicLinkSuccess(false)
     const result = await api.sendMagicLink(target.id)
     setMagicLinkLoading(false)
-    if (api.isError(result)) { alert(result.error.message); return }
+    if (api.isError(result)) return
     setMagicLinkSuccess(true)
   }
 
@@ -167,22 +202,21 @@ export function AdminUsers() {
     setResendLoading(true); setResendSuccess(false)
     const result = await api.resendVerificationEmail(target.id)
     setResendLoading(false)
-    if (api.isError(result)) { alert(result.error.message); return }
+    if (api.isError(result)) return
     setResendSuccess(true)
   }
 
-  const handlePasswordSave = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handlePasswordSave = async (values: { password: string }) => {
     if (!target) return
     setPwdError(null); setPwdSuccess(false); setPwdLoading(true)
-    const result = await api.adminResetPassword(target.id, newPassword)
+    const result = await api.adminResetPassword(target.id, values.password)
     setPwdLoading(false)
     if (api.isError(result)) { setPwdError(result.error.message); return }
-    setNewPassword(''); setPwdSuccess(true)
+    pwdForm.resetFields()
+    setPwdSuccess(true)
   }
 
-  const handlePermSave = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handlePermSave = async () => {
     if (!target) return
     setPermError(null); setPermSuccess(false); setPermLoading(true)
     const result = await api.updateUserPermissions(target.id, permSelection)
@@ -197,388 +231,490 @@ export function AdminUsers() {
     setDeleteLoading(true)
     const result = await api.deleteAdminUser(target.id)
     setDeleteLoading(false)
-    if (api.isError(result)) { alert(result.error.message); return }
+    if (api.isError(result)) return
     closeManage(); await load()
   }
 
   if (loadError) {
-    return <div className="max-w-5xl mx-auto mt-16 p-6 text-red-400">Failed to load users: {loadError}</div>
+    return (
+      <div style={{ maxWidth: 960, margin: '64px auto', padding: '0 24px' }}>
+        <Alert message={`Failed to load users: ${loadError}`} type="error" showIcon />
+      </div>
+    )
   }
 
+  const columns: ColumnsType<AdminUser> = [
+    {
+      title: 'User',
+      key: 'user',
+      render: (_, u) => (
+        <div>
+          <Typography.Text style={{ color: SL.text, fontWeight: 500, display: 'block' }}>
+            {u.displayName ?? u.email}
+          </Typography.Text>
+          {u.displayName && (
+            <Typography.Text style={{ color: SL.muted, fontSize: 12 }}>{u.email}</Typography.Text>
+          )}
+          {!u.emailConfirmed && (
+            <Tag color="orange" style={{ marginTop: 4, fontSize: 11 }}>unverified</Tag>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: 'Status',
+      key: 'status',
+      render: (_, u) => (
+        <Tag
+          color={u.status === 'suspended' ? 'error' : 'success'}
+          style={{ borderRadius: 20, fontWeight: 600 }}
+        >
+          {u.status}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Permissions',
+      key: 'permissions',
+      render: (_, u) =>
+        u.permissions.length === 0 ? (
+          <Typography.Text style={{ color: SL.muted, fontSize: 12 }}>none</Typography.Text>
+        ) : (
+          <Flex wrap="wrap" gap={4}>
+            {u.permissions.map(p => (
+              <Tag
+                key={p}
+                color="processing"
+                style={{ borderRadius: 6, fontSize: 11, fontWeight: 500 }}
+              >
+                {p.replace('usermanage:', '')}
+              </Tag>
+            ))}
+          </Flex>
+        ),
+    },
+    {
+      title: 'Joined',
+      key: 'joined',
+      render: (_, u) => (
+        <Typography.Text style={{ color: SL.muted, fontSize: 12 }}>
+          {new Date(u.createdAt).toLocaleDateString()}
+        </Typography.Text>
+      ),
+    },
+    {
+      key: 'actions',
+      align: 'right',
+      render: (_, u) => (
+        <Button
+          size="small"
+          onClick={() => openManage(u)}
+          style={{ borderRadius: 8, color: SL.muted, borderColor: SL.border }}
+        >
+          Manage
+        </Button>
+      ),
+    },
+  ]
+
   return (
-    <div className="max-w-5xl mx-auto mt-10 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">User Management</h1>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 24px' }}>
+      <Flex align="center" justify="space-between" style={{ marginBottom: 24 }}>
+        <Typography.Title level={3} style={{ color: SL.text, margin: 0 }}>
+          User Management
+        </Typography.Title>
         {canAdd && (
-          <button
+          <Button
+            type="primary"
             onClick={() => setShowAddForm(v => !v)}
-            className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90"
+            style={{ borderRadius: 10 }}
           >
             {showAddForm ? 'Cancel' : '+ Add user'}
-          </button>
+          </Button>
         )}
-      </div>
+      </Flex>
 
       {/* Add user form */}
       {showAddForm && (
-        <form onSubmit={handleAdd} className="mb-6 p-5 border border-[#2A2D30] rounded-[20px] bg-[#1C1F21] flex flex-col gap-3">
-          <h2 className="font-semibold text-slate-100">New user</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              type="email" placeholder="Email address" required value={addEmail}
-              onChange={e => setAddEmail(e.target.value)}
-              className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors"
-            />
-            <input
-              type="password" placeholder="Temporary password (min 6 chars)" required minLength={6} value={addPassword}
-              onChange={e => setAddPassword(e.target.value)}
-              className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors"
-            />
-          </div>
-          {addError && <p className="text-red-400 text-sm">{addError}</p>}
-          <div>
-            <button
-              type="submit" disabled={addLoading}
-              className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90 disabled:opacity-50"
+        <div
+          style={{
+            marginBottom: 24,
+            padding: 20,
+            backgroundColor: SL.surface,
+            border: `1px solid ${SL.border}`,
+            borderRadius: 20,
+          }}
+        >
+          <Typography.Text style={{ color: SL.text, fontWeight: 600, display: 'block', marginBottom: 16 }}>
+            New user
+          </Typography.Text>
+          <Form form={addForm} layout="inline" onFinish={handleAdd} style={{ flexWrap: 'wrap', gap: 8 }}>
+            <Form.Item name="email" rules={[{ required: true, type: 'email' }]} style={{ flex: 1, minWidth: 200 }}>
+              <Input placeholder="Email address" style={{ borderRadius: 10 }} />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              rules={[{ required: true, min: 6, message: 'Min 6 chars' }]}
+              style={{ flex: 1, minWidth: 200 }}
             >
-              {addLoading ? 'Creating…' : 'Create user'}
-            </button>
-          </div>
-        </form>
+              <Input.Password placeholder="Temporary password (min 6 chars)" style={{ borderRadius: 10 }} />
+            </Form.Item>
+            {addError && (
+              <Form.Item style={{ width: '100%' }}>
+                <Alert message={addError} type="error" showIcon style={{ borderRadius: 8 }} />
+              </Form.Item>
+            )}
+            <Form.Item>
+              <Button type="primary" htmlType="submit" loading={addLoading} style={{ borderRadius: 8 }}>
+                Create user
+              </Button>
+            </Form.Item>
+          </Form>
+        </div>
       )}
 
       {/* User table */}
-      <div className="bg-[#1C1F21] border border-[#2A2D30] rounded-[20px] overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-[#111314]/50 border-b border-[#2A2D30]">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">User</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Permissions</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Joined</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(u => (
-              <tr key={u.id} className="border-b last:border-0 hover:bg-sky-400/5 transition-colors">
-                <td className="px-4 py-3">
-                  <div className="font-medium text-slate-100">{u.displayName ?? u.email}</div>
-                  {u.displayName && <div className="text-slate-500 text-xs">{u.email}</div>}
-                  {!u.emailConfirmed && (
-                    <span className="text-xs text-amber-400 font-medium">unverified</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                    u.status === 'suspended' ? 'bg-red-500/15 text-red-400' : 'bg-emerald-400/15 text-emerald-400'
-                  }`}>
-                    {u.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {u.permissions.length === 0
-                      ? <span className="text-slate-500 text-xs">none</span>
-                      : u.permissions.map(p => (
-                        <span key={p} className="bg-sky-400/10 text-sky-400 text-xs px-1.5 py-0.5 rounded-md font-medium">
-                          {p.replace('usermanage:', '')}
-                        </span>
-                      ))
-                    }
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-slate-500 text-xs">
-                  {new Date(u.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => openManage(u)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2D30] text-slate-500 hover:bg-sky-400/5 font-medium transition-colors"
-                  >
-                    Manage
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-slate-500">No users found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table
+        dataSource={users}
+        columns={columns}
+        rowKey="id"
+        pagination={false}
+        style={{ borderRadius: 20, overflow: 'hidden' }}
+        locale={{ emptyText: <Typography.Text style={{ color: SL.muted }}>No users found</Typography.Text> }}
+      />
 
       {/* Manage modal */}
-      {target && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1C1F21] border border-[#2A2D30] rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
-
-            {/* Header */}
-            <div className="px-6 py-5 flex items-center gap-4">
-              <div className="w-11 h-11 rounded-full bg-sky-400/15 border border-sky-400/30 flex items-center justify-center text-base font-semibold text-sky-400 shrink-0 select-none">
+      <Modal
+        open={!!target}
+        onCancel={closeManage}
+        footer={
+          <Button onClick={closeManage} style={{ borderRadius: 8, color: SL.muted, borderColor: SL.border }}>
+            Close
+          </Button>
+        }
+        width={640}
+        closeIcon={<CloseOutlined style={{ color: SL.muted }} />}
+        styles={{
+          header: { backgroundColor: SL.surface, borderBottom: `1px solid ${SL.border}`, padding: '20px 24px' },
+          body: { padding: 0, maxHeight: '70vh', overflowY: 'auto' },
+          footer: {
+            backgroundColor: `${SL.bg}50`,
+            borderTop: `1px solid ${SL.border}`,
+            padding: '12px 24px',
+          },
+        }}
+        title={
+          target && (
+            <Flex align="center" gap={12}>
+              <Avatar
+                size={44}
+                icon={<UserOutlined />}
+                style={{
+                  backgroundColor: 'rgba(56,189,248,0.15)',
+                  border: '1px solid rgba(56,189,248,0.3)',
+                  color: SL.accent,
+                  flexShrink: 0,
+                }}
+              >
                 {(target.displayName ?? target.email ?? '?').charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-100 leading-tight truncate">
+              </Avatar>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <Typography.Text style={{ color: SL.text, fontWeight: 600, display: 'block' }}>
                   {target.displayName ?? target.email}
-                </p>
+                </Typography.Text>
                 {target.displayName && (
-                  <p className="text-sm text-slate-500 truncate">{target.email}</p>
+                  <Typography.Text style={{ color: SL.muted, fontSize: 13 }}>{target.email}</Typography.Text>
                 )}
               </div>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
-                target.status === 'suspended' ? 'bg-red-500/15 text-red-400' : 'bg-emerald-400/15 text-emerald-400'
-              }`}>
+              <Tag
+                color={target.status === 'suspended' ? 'error' : 'success'}
+                style={{ borderRadius: 20, fontWeight: 600 }}
+              >
                 {target.status}
-              </span>
-              <button onClick={closeManage} className="text-slate-500 hover:text-slate-100 transition-colors shrink-0 ml-1">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              </Tag>
+            </Flex>
+          )
+        }
+      >
+        {target && (
+          <div>
+
+            {/* Profile */}
+            <div style={{ padding: '20px 24px' }}>
+              <SectionLabel>Profile</SectionLabel>
+              <Form
+                form={profileForm}
+                layout="vertical"
+                onFinish={handleProfileSave}
+                requiredMark={false}
+              >
+                <Flex gap={12}>
+                  <Form.Item
+                    name="displayName"
+                    label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Display name</span>}
+                    style={{ flex: 1, marginBottom: 12 }}
+                  >
+                    <Input
+                      placeholder="Display name"
+                      disabled={readOnly}
+                      style={{ borderRadius: 10 }}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name="avatarUrl"
+                    label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Avatar URL</span>}
+                    style={{ flex: 1, marginBottom: 12 }}
+                  >
+                    <Input placeholder="https://…" disabled={readOnly} style={{ borderRadius: 10 }} />
+                  </Form.Item>
+                </Flex>
+                {profileError && <Alert message={profileError} type="error" showIcon style={{ borderRadius: 8, marginBottom: 12 }} />}
+                {!readOnly && (
+                  <Flex align="center" gap={12}>
+                    <Button type="primary" htmlType="submit" loading={profileLoading} style={{ borderRadius: 8 }}>
+                      Save changes
+                    </Button>
+                    {profileSuccess && <Typography.Text style={{ color: SL.mint, fontWeight: 500, fontSize: 14 }}>✓ Saved</Typography.Text>}
+                  </Flex>
+                )}
+              </Form>
             </div>
 
-            {/* Scrollable body */}
-            <div className="overflow-y-auto flex-1 divide-y divide-[#2A2D30]/50">
+            <Divider />
 
-              {/* Profile */}
-              <section className="px-6 py-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Profile</p>
-                <form onSubmit={handleProfileSave} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-100 mb-1.5">Display name</label>
-                      <input
-                        type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
-                        placeholder="Display name" disabled={readOnly}
-                        className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors disabled:bg-[#111314]/50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-100 mb-1.5">Avatar URL</label>
-                      <input
-                        type="url" value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)}
-                        placeholder="https://…" disabled={readOnly}
-                        className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors disabled:bg-[#111314]/50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                      />
-                    </div>
+            {/* Authentication */}
+            <div style={{ padding: '20px 24px' }}>
+              <SectionLabel>Authentication</SectionLabel>
+              <Space direction="vertical" size={20} style={{ width: '100%' }}>
+
+                {/* Email verification */}
+                <Flex align="center" justify="space-between" gap={16}>
+                  <div style={{ minWidth: 0 }}>
+                    <Typography.Text style={{ color: SL.text, fontWeight: 500, display: 'block', fontSize: 14 }}>
+                      Email verification
+                    </Typography.Text>
+                    <Typography.Text style={{ color: SL.muted, fontSize: 12 }}>{target.email}</Typography.Text>
                   </div>
-                  {profileError && <p className="text-red-400 text-sm">{profileError}</p>}
-                  {!readOnly && (
-                    <div className="flex items-center gap-3">
-                      <button type="submit" disabled={profileLoading}
-                        className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90 disabled:opacity-50">
-                        {profileLoading ? 'Saving…' : 'Save changes'}
-                      </button>
-                      {profileSuccess && <span className="text-sm text-emerald-400 font-medium">✓ Saved</span>}
-                    </div>
-                  )}
-                </form>
-              </section>
+                  <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
+                    <Tag
+                      color={target.emailConfirmed ? 'success' : 'warning'}
+                      style={{ borderRadius: 20, fontWeight: 600 }}
+                    >
+                      {target.emailConfirmed ? '✓ Verified' : 'Unverified'}
+                    </Tag>
+                    {!readOnly && (target.emailConfirmed ? (
+                      <Button size="small" loading={unverifyLoading} onClick={handleUnverify} style={{ borderRadius: 8, borderColor: SL.border, color: SL.muted }}>
+                        Revoke
+                      </Button>
+                    ) : (
+                      <>
+                        <Button size="small" loading={verifyLoading} onClick={handleVerify} style={{ borderRadius: 8, borderColor: 'rgba(74,222,128,0.4)', color: SL.mint }}>
+                          Mark verified
+                        </Button>
+                        <Button size="small" loading={resendLoading} onClick={handleResendVerification} style={{ borderRadius: 8, borderColor: SL.border, color: SL.muted }}>
+                          Resend email
+                        </Button>
+                        {resendSuccess && <Typography.Text style={{ color: SL.mint, fontSize: 12, fontWeight: 500 }}>✓ Sent</Typography.Text>}
+                      </>
+                    ))}
+                  </Flex>
+                </Flex>
 
-              {/* Authentication */}
-              <section className="px-6 py-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Authentication</p>
-                <div className="space-y-5">
-
-                  {/* Email verification row */}
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-100">Email verification</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{target.email}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        target.emailConfirmed ? 'bg-emerald-400/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'
-                      }`}>
-                        {target.emailConfirmed ? '✓ Verified' : 'Unverified'}
-                      </span>
-                      {!readOnly && (target.emailConfirmed ? (
-                        <button onClick={handleUnverify} disabled={unverifyLoading}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2D30] text-slate-500 hover:bg-sky-400/5 disabled:opacity-50 font-medium">
-                          {unverifyLoading ? '…' : 'Revoke'}
-                        </button>
-                      ) : (
-                        <>
-                          <button onClick={handleVerify} disabled={verifyLoading}
-                            className="text-xs px-3 py-1.5 rounded-lg border border-emerald-400/40 text-emerald-400 hover:bg-emerald-400/10 disabled:opacity-50 font-medium">
-                            {verifyLoading ? '…' : 'Mark verified'}
-                          </button>
-                          <button onClick={handleResendVerification} disabled={resendLoading}
-                            className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2D30] text-slate-500 hover:bg-sky-400/5 disabled:opacity-50 font-medium">
-                            {resendLoading ? '…' : 'Resend email'}
-                          </button>
-                          {resendSuccess && <span className="text-xs text-emerald-400 font-medium">✓ Sent</span>}
-                        </>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Magic link row — only shown to admins who can act */}
-                  {!readOnly && (
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-slate-100">Magic login link</p>
-                        <p className="text-xs text-slate-500 mt-0.5">Send a one-time passwordless sign-in link</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={handleMagicLink} disabled={magicLinkLoading}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2D30] text-slate-500 hover:bg-sky-400/5 disabled:opacity-50 font-medium">
-                          {magicLinkLoading ? 'Sending…' : 'Send link'}
-                        </button>
-                        {magicLinkSuccess && <span className="text-xs text-emerald-400 font-medium">✓ Sent</span>}
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              </section>
-
-              {/* Account access */}
-              {canActOnTarget && (
-                <section className="px-6 py-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Account access</p>
-                  <div className="flex items-center justify-between gap-4">
+                {/* Magic link */}
+                {!readOnly && (
+                  <Flex align="center" justify="space-between" gap={16}>
                     <div>
-                      <p className="text-sm font-medium text-slate-100">Login access</p>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <Typography.Text style={{ color: SL.text, fontWeight: 500, display: 'block', fontSize: 14 }}>
+                        Magic login link
+                      </Typography.Text>
+                      <Typography.Text style={{ color: SL.muted, fontSize: 12 }}>
+                        Send a one-time passwordless sign-in link
+                      </Typography.Text>
+                    </div>
+                    <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
+                      <Button size="small" loading={magicLinkLoading} onClick={handleMagicLink} style={{ borderRadius: 8, borderColor: SL.border, color: SL.muted }}>
+                        Send link
+                      </Button>
+                      {magicLinkSuccess && <Typography.Text style={{ color: SL.mint, fontSize: 12, fontWeight: 500 }}>✓ Sent</Typography.Text>}
+                    </Flex>
+                  </Flex>
+                )}
+
+              </Space>
+            </div>
+
+            {/* Account access */}
+            {canActOnTarget && (
+              <>
+                <Divider />
+                <div style={{ padding: '20px 24px' }}>
+                  <SectionLabel>Account access</SectionLabel>
+                  <Flex align="center" justify="space-between" gap={16}>
+                    <div>
+                      <Typography.Text style={{ color: SL.text, fontWeight: 500, display: 'block', fontSize: 14 }}>
+                        Login access
+                      </Typography.Text>
+                      <Typography.Text style={{ color: SL.muted, fontSize: 12 }}>
                         {target.status === 'suspended'
                           ? 'This user is blocked from signing in'
                           : 'This user can sign in normally'}
-                      </p>
+                      </Typography.Text>
                     </div>
                     {(canSuspend || (canSelfManage && isSelf)) && (
-                      <button onClick={handleSuspendToggle} disabled={suspendLoading}
-                        className={`shrink-0 text-xs px-4 py-2 rounded-lg border font-medium disabled:opacity-50 transition-colors ${
-                          target.status === 'suspended'
-                            ? 'border-emerald-400/40 text-emerald-400 hover:bg-emerald-400/10'
-                            : 'border-red-500/30 text-red-400 hover:bg-red-500/10'
-                        }`}>
-                        {suspendLoading ? '…' : target.status === 'suspended' ? 'Restore access' : 'Suspend access'}
-                      </button>
+                      <Button
+                        size="small"
+                        loading={suspendLoading}
+                        onClick={handleSuspendToggle}
+                        style={{
+                          borderRadius: 8,
+                          flexShrink: 0,
+                          ...(target.status === 'suspended'
+                            ? { borderColor: 'rgba(74,222,128,0.4)', color: SL.mint }
+                            : { borderColor: 'rgba(239,68,68,0.3)', color: '#f87171' }),
+                        }}
+                      >
+                        {target.status === 'suspended' ? 'Restore access' : 'Suspend access'}
+                      </Button>
                     )}
-                  </div>
-                </section>
-              )}
+                  </Flex>
+                </div>
+              </>
+            )}
 
-              {/* Security */}
-              {(canResetPassword || (canSelfManage && isSelf)) && canActOnTarget && (
-                <section className="px-6 py-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Security</p>
-                  <form onSubmit={handlePasswordSave} className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-100 mb-1.5">Set new password</label>
-                      <div className="flex gap-3">
-                        <input
-                          type="password" required minLength={6} value={newPassword}
-                          onChange={e => setNewPassword(e.target.value)}
-                          placeholder="Min 6 characters"
-                          className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 flex-1 focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors"
-                        />
-                        <button type="submit" disabled={pwdLoading}
-                          className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90 disabled:opacity-50 whitespace-nowrap">
-                          {pwdLoading ? 'Saving…' : 'Set password'}
-                        </button>
-                      </div>
-                    </div>
-                    {pwdError && <p className="text-red-400 text-sm">{pwdError}</p>}
-                    {pwdSuccess && <p className="text-sm text-emerald-400 font-medium">✓ Password updated</p>}
-                  </form>
-                </section>
-              )}
+            {/* Security */}
+            {(canResetPassword || (canSelfManage && isSelf)) && canActOnTarget && (
+              <>
+                <Divider />
+                <div style={{ padding: '20px 24px' }}>
+                  <SectionLabel>Security</SectionLabel>
+                  <Form form={pwdForm} layout="vertical" onFinish={handlePasswordSave} requiredMark={false}>
+                    <Form.Item
+                      name="password"
+                      label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Set new password</span>}
+                      rules={[{ required: true, min: 6, message: 'Min 6 characters' }]}
+                      style={{ marginBottom: 12 }}
+                    >
+                      <Flex gap={8}>
+                        <Input.Password placeholder="Min 6 characters" style={{ borderRadius: 10, flex: 1 }} />
+                        <Button type="primary" htmlType="submit" loading={pwdLoading} style={{ borderRadius: 8, whiteSpace: 'nowrap' }}>
+                          Set password
+                        </Button>
+                      </Flex>
+                    </Form.Item>
+                    {pwdError && <Alert message={pwdError} type="error" showIcon style={{ borderRadius: 8 }} />}
+                    {pwdSuccess && <Typography.Text style={{ color: SL.mint, fontWeight: 500, fontSize: 14 }}>✓ Password updated</Typography.Text>}
+                  </Form>
+                </div>
+              </>
+            )}
 
-              {/* Permissions */}
-              {canActOnTarget && (
-                <section className="px-6 py-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Permissions</p>
-                  <form onSubmit={handlePermSave} className="space-y-1">
+            {/* Permissions */}
+            {canActOnTarget && (
+              <>
+                <Divider />
+                <div style={{ padding: '20px 24px' }}>
+                  <SectionLabel>Permissions</SectionLabel>
+                  <Space direction="vertical" size={0} style={{ width: '100%' }}>
                     {PERMISSION_META.map(({ key, label, description }) => (
-                      <div key={key} className="flex items-center justify-between py-2.5">
+                      <Flex key={key} align="center" justify="space-between" style={{ padding: '10px 0' }}>
                         <div>
-                          <p className="text-sm font-medium text-slate-100">{label}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+                          <Typography.Text style={{ color: SL.text, fontWeight: 500, fontSize: 14, display: 'block' }}>
+                            {label}
+                          </Typography.Text>
+                          <Typography.Text style={{ color: SL.muted, fontSize: 12 }}>{description}</Typography.Text>
                         </div>
-                        <button
-                          type="button"
+                        <Switch
+                          checked={permSelection.includes(key)}
                           disabled={!(canEditPermissions || (canSelfManage && isSelf))}
-                          onClick={() => (canEditPermissions || (canSelfManage && isSelf)) && setPermSelection(prev =>
-                            prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key]
-                          )}
-                          className={`relative inline-flex h-6 w-11 shrink-0 ml-6 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 disabled:cursor-not-allowed disabled:opacity-60 ${
-                            permSelection.includes(key) ? 'bg-sky-400' : 'bg-[#2A2D30]'
-                          }`}
-                        >
-                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                            permSelection.includes(key) ? 'translate-x-6' : 'translate-x-1'
-                          }`} />
-                        </button>
-                      </div>
+                          onChange={checked => {
+                            setPermSelection(prev =>
+                              checked ? [...prev, key] : prev.filter(x => x !== key)
+                            )
+                          }}
+                          style={{ marginLeft: 24, flexShrink: 0 }}
+                        />
+                      </Flex>
                     ))}
-                    {permError && <p className="text-red-400 text-sm pt-2">{permError}</p>}
-                    {(canEditPermissions || (canSelfManage && isSelf)) && (
-                      <div className="flex items-center gap-3 pt-3">
-                        <button type="submit" disabled={permLoading}
-                          className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90 disabled:opacity-50">
-                          {permLoading ? 'Saving…' : 'Save permissions'}
-                        </button>
-                        {permSuccess && <span className="text-sm text-emerald-400 font-medium">✓ Saved</span>}
-                      </div>
-                    )}
-                  </form>
-                </section>
-              )}
+                  </Space>
+                  {permError && <Alert message={permError} type="error" showIcon style={{ borderRadius: 8, marginTop: 12 }} />}
+                  {(canEditPermissions || (canSelfManage && isSelf)) && (
+                    <Flex align="center" gap={12} style={{ marginTop: 16 }}>
+                      <Button type="primary" loading={permLoading} onClick={handlePermSave} style={{ borderRadius: 8 }}>
+                        Save permissions
+                      </Button>
+                      {permSuccess && <Typography.Text style={{ color: SL.mint, fontWeight: 500, fontSize: 14 }}>✓ Saved</Typography.Text>}
+                    </Flex>
+                  )}
+                </div>
+              </>
+            )}
 
-              {/* Danger zone */}
-              {(canDelete || (canSelfManage && isSelf)) && canActOnTarget && (
-                <section className="px-6 py-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-red-400 mb-4">Danger zone</p>
+            {/* Danger zone */}
+            {(canDelete || (canSelfManage && isSelf)) && canActOnTarget && (
+              <>
+                <Divider />
+                <div style={{ padding: '20px 24px' }}>
+                  <SectionLabel danger>Danger zone</SectionLabel>
                   {!deleteConfirm ? (
-                    <div className="flex items-center justify-between p-4 rounded-xl border border-red-500/20 bg-red-500/5">
+                    <Flex
+                      align="center"
+                      justify="space-between"
+                      style={{
+                        padding: 16,
+                        borderRadius: 12,
+                        border: '1px solid rgba(239,68,68,0.2)',
+                        backgroundColor: 'rgba(239,68,68,0.05)',
+                      }}
+                    >
                       <div>
-                        <p className="text-sm font-medium text-red-300">Delete this account</p>
-                        <p className="text-xs text-red-400 mt-0.5">Permanently removes the user and all their data</p>
+                        <Typography.Text style={{ color: '#fca5a5', fontWeight: 500, fontSize: 14, display: 'block' }}>
+                          Delete this account
+                        </Typography.Text>
+                        <Typography.Text style={{ color: '#f87171', fontSize: 12 }}>
+                          Permanently removes the user and all their data
+                        </Typography.Text>
                       </div>
-                      <button onClick={() => setDeleteConfirm(true)}
-                        className="shrink-0 ml-4 text-sm px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 font-medium transition-colors">
+                      <Button
+                        danger
+                        size="small"
+                        onClick={() => setDeleteConfirm(true)}
+                        style={{ borderRadius: 8, flexShrink: 0, marginLeft: 16 }}
+                      >
                         Delete user
-                      </button>
-                    </div>
+                      </Button>
+                    </Flex>
                   ) : (
-                    <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10 space-y-3">
-                      <p className="text-sm font-semibold text-red-300">This cannot be undone</p>
-                      <p className="text-sm text-red-400">
+                    <div
+                      style={{
+                        padding: 16,
+                        borderRadius: 12,
+                        border: '1px solid rgba(239,68,68,0.3)',
+                        backgroundColor: 'rgba(239,68,68,0.1)',
+                      }}
+                    >
+                      <Typography.Text style={{ color: '#fca5a5', fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 8 }}>
+                        This cannot be undone
+                      </Typography.Text>
+                      <Typography.Text style={{ color: '#f87171', fontSize: 14, display: 'block', marginBottom: 16 }}>
                         Permanently delete <strong>{target.email}</strong> and all associated data?
-                      </p>
-                      <div className="flex gap-2">
-                        <button onClick={handleDelete} disabled={deleteLoading}
-                          className="text-sm px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 font-medium">
-                          {deleteLoading ? 'Deleting…' : 'Yes, delete permanently'}
-                        </button>
-                        <button onClick={() => setDeleteConfirm(false)}
-                          className="text-sm px-4 py-2 rounded-lg border border-[#2A2D30] bg-[#1C1F21] hover:bg-sky-400/5 text-slate-500 font-medium">
+                      </Typography.Text>
+                      <Flex gap={8}>
+                        <Button danger loading={deleteLoading} onClick={handleDelete} style={{ borderRadius: 8 }}>
+                          Yes, delete permanently
+                        </Button>
+                        <Button onClick={() => setDeleteConfirm(false)} style={{ borderRadius: 8, borderColor: SL.border, color: SL.muted }}>
                           Cancel
-                        </button>
-                      </div>
+                        </Button>
+                      </Flex>
                     </div>
                   )}
-                </section>
-              )}
-
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 border-t bg-[#111314]/30 rounded-b-2xl flex justify-end">
-              <button onClick={closeManage}
-                className="px-4 py-2 rounded-lg border border-[#2A2D30] text-sm text-slate-500 hover:bg-sky-400/5 font-medium transition-colors">
-                Close
-              </button>
-            </div>
+                </div>
+              </>
+            )}
 
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   )
 }
