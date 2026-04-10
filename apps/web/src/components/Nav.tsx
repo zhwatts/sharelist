@@ -11,21 +11,23 @@ export function Nav() {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-      <Link to="/" className="font-bold text-gray-900">ShareList</Link>
-      <div className="flex items-center gap-4 text-sm">
+    <nav className="bg-sl-nav border-b border-sl-border px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
+      <Link to="/" className="text-base tracking-tight">
+        <span className="font-light text-sl-text">Share</span><span className="font-bold text-sl-accent">List</span>
+      </Link>
+      <div className="flex items-center gap-5 text-sm">
         {user ? (
           <>
             {user.permissions.includes('usermanage:listusers') && (
-              <Link to="/admin/users" className="text-gray-600 hover:text-gray-900">Users</Link>
+              <Link to="/admin/users" className="text-sl-muted hover:text-sl-text transition-colors">Users</Link>
             )}
-            <Link to="/profile" className="text-gray-600 hover:text-gray-900">{user.email}</Link>
-            <button onClick={handleSignOut} className="text-gray-500 hover:text-gray-900">Sign out</button>
+            <Link to="/profile" className="text-sl-muted hover:text-sl-text transition-colors truncate max-w-[160px]">{user.email}</Link>
+            <button onClick={handleSignOut} className="text-sl-muted hover:text-red-400 transition-colors">Sign out</button>
           </>
         ) : (
           <>
-            <Link to="/signin" className="text-gray-600 hover:text-gray-900">Sign in</Link>
-            <Link to="/signup" className="bg-gray-900 text-white px-3 py-1 rounded hover:bg-gray-700">Sign up</Link>
+            <Link to="/signin" className="text-sl-muted hover:text-sl-text transition-colors">Sign in</Link>
+            <Link to="/signup" className="bg-sl-accent text-sl-bg px-3.5 py-1.5 rounded-xl text-sm font-semibold hover:bg-sl-accent/90 transition-colors">Sign up</Link>
           </>
         )}
       </div>
