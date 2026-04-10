@@ -9,6 +9,7 @@ const PERMISSION_META = [
   { key: 'usermanage:suspend', label: 'Suspend users', description: 'Can suspend and unsuspend accounts' },
   { key: 'usermanage:updatepassword', label: 'Reset passwords', description: 'Can reset passwords for other users' },
   { key: 'usermanage:deleteusers', label: 'Delete users', description: 'Can permanently delete user accounts' },
+  { key: 'usermanage:editpermissions', label: 'Edit permissions', description: 'Can grant or revoke permissions for other users' },
 ]
 
 export function AdminUsers() {
@@ -60,10 +61,11 @@ export function AdminUsers() {
   const canSuspend = me?.permissions.includes('usermanage:suspend') ?? false
   const canResetPassword = me?.permissions.includes('usermanage:updatepassword') ?? false
   const canDelete = me?.permissions.includes('usermanage:deleteusers') ?? false
+  const canEditPermissions = me?.permissions.includes('usermanage:editpermissions') ?? false
   const isAdmin = me?.role === 'admin'
   const isSelf = target?.id === me?.id
   // readOnly: can view the modal but has no write permissions
-  const readOnly = !isAdmin && !canSuspend && !canResetPassword
+  const readOnly = !isAdmin && !canSuspend && !canResetPassword && !canEditPermissions && !canDelete
 
   const load = async () => {
     const result = await api.listAdminUsers()
@@ -495,8 +497,8 @@ export function AdminUsers() {
                         </div>
                         <button
                           type="button"
-                          disabled={readOnly}
-                          onClick={() => !readOnly && setPermSelection(prev =>
+                          disabled={!canEditPermissions}
+                          onClick={() => canEditPermissions && setPermSelection(prev =>
                             prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key]
                           )}
                           className={`relative inline-flex h-6 w-11 shrink-0 ml-6 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 disabled:cursor-not-allowed disabled:opacity-60 ${
@@ -510,7 +512,7 @@ export function AdminUsers() {
                       </div>
                     ))}
                     {permError && <p className="text-red-600 text-sm pt-2">{permError}</p>}
-                    {!readOnly && (
+                    {canEditPermissions && (
                       <div className="flex items-center gap-3 pt-3">
                         <button type="submit" disabled={permLoading}
                           className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50">

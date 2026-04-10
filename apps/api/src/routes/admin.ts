@@ -280,8 +280,8 @@ router.patch('/:id/unsuspend', requirePermission('usermanage:suspend'), async (r
   res.json(result)
 })
 
-// PUT /admin/users/:id/permissions — assign the full permissions array for a user (admin role only)
-router.put('/:id/permissions', requireAdmin, async (req: Request, res: Response) => {
+// PUT /admin/users/:id/permissions — assign the full permissions array for a user
+router.put('/:id/permissions', requirePermission('usermanage:editpermissions'), async (req: Request, res: Response) => {
   const id = req.params['id'] as string
   const { permissions } = req.body as { permissions?: unknown }
 
@@ -290,7 +290,7 @@ router.put('/:id/permissions', requireAdmin, async (req: Request, res: Response)
     return
   }
 
-  const valid = ['usermanage:add', 'usermanage:suspend', 'usermanage:updatepassword', 'usermanage:listusers', 'usermanage:deleteusers']
+  const valid = ['usermanage:add', 'usermanage:suspend', 'usermanage:updatepassword', 'usermanage:listusers', 'usermanage:deleteusers', 'usermanage:editpermissions']
   const invalid = (permissions as string[]).filter(p => !valid.includes(p))
   if (invalid.length > 0) {
     res.status(400).json({ data: null, error: { message: `Unknown permissions: ${invalid.join(', ')}` } })
