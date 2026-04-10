@@ -20,7 +20,7 @@ type ProfileRow = {
   created_at: string
 }
 
-function profileToUser(email: string, profile: ProfileRow): User {
+function profileToUser(email: string, role: string, permissions: string[], profile: ProfileRow): User {
   const connectedPlatforms: Platform[] = []
   if (profile.spotify_connected) connectedPlatforms.push('spotify')
   if (profile.apple_music_connected) connectedPlatforms.push('apple_music')
@@ -33,6 +33,8 @@ function profileToUser(email: string, profile: ProfileRow): User {
     avatarUrl: profile.avatar_url ?? undefined,
     connectedPlatforms,
     createdAt: profile.created_at,
+    role,
+    permissions,
   }
 }
 
@@ -68,7 +70,9 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
     return
   }
 
-  const user = profileToUser(authData.user.email ?? '', profile as ProfileRow)
+  const role = (authData.user.app_metadata?.['role'] as string | undefined) ?? 'user'
+  const permissions = (authData.user.app_metadata?.['permissions'] as string[] | undefined) ?? []
+  const user = profileToUser(authData.user.email ?? '', role, permissions, profile as ProfileRow)
   const result: ApiResult<User> = { data: user, error: null }
   res.json(result)
 })
@@ -124,7 +128,7 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
     return
   }
 
-  const user = profileToUser(req.user!.email, profile as ProfileRow)
+  const user = profileToUser(req.user!.email, req.user!.role, req.user!.permissions, profile as ProfileRow)
   const result: ApiResult<User> = { data: user, error: null }
   res.json(result)
 })

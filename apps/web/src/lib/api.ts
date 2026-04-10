@@ -91,6 +91,49 @@ export function confirmPasswordReset(
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
+export interface AdminUser {
+  id: string
+  email: string | undefined
+  displayName: string | null
+  avatarUrl: string | null
+  status: string
+  permissions: string[]
+  createdAt: string
+}
+
+export function listAdminUsers(): Promise<ApiResult<AdminUser[]>> {
+  return request<AdminUser[]>('/admin/users')
+}
+
+export function createAdminUser(email: string, password: string): Promise<ApiResult<{ id: string; email: string }>> {
+  return request<{ id: string; email: string }>('/admin/users', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
+}
+
+export function suspendUser(id: string): Promise<ApiResult<{ success: boolean }>> {
+  return request<{ success: boolean }>(`/admin/users/${id}/suspend`, { method: 'PATCH' })
+}
+
+export function unsuspendUser(id: string): Promise<ApiResult<{ success: boolean }>> {
+  return request<{ success: boolean }>(`/admin/users/${id}/unsuspend`, { method: 'PATCH' })
+}
+
+export function adminResetPassword(id: string, password: string): Promise<ApiResult<{ success: boolean }>> {
+  return request<{ success: boolean }>(`/admin/users/${id}/password`, {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  })
+}
+
+export function updateUserPermissions(id: string, permissions: string[]): Promise<ApiResult<{ permissions: string[] }>> {
+  return request<{ permissions: string[] }>(`/admin/users/${id}/permissions`, {
+    method: 'PUT',
+    body: JSON.stringify({ permissions }),
+  })
+}
+
 export function updateProfile(
   id: string,
   updates: { display_name?: string; avatar_url?: string }

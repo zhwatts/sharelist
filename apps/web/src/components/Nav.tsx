@@ -16,6 +16,9 @@ export function Nav() {
       <div className="flex items-center gap-4 text-sm">
         {user ? (
           <>
+            {user.permissions.includes('usermanage:listusers') && (
+              <Link to="/admin/users" className="text-gray-600 hover:text-gray-900">Users</Link>
+            )}
             <Link to="/profile" className="text-gray-600 hover:text-gray-900">{user.email}</Link>
             <button onClick={handleSignOut} className="text-gray-500 hover:text-gray-900">Sign out</button>
           </>

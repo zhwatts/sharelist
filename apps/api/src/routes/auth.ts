@@ -13,6 +13,8 @@ function log(level: string, message: string, ctx: Record<string, unknown> = {}):
 function profileToUser(
   userId: string,
   email: string,
+  role: string,
+  permissions: string[],
   profile: {
     display_name: string | null
     avatar_url: string | null
@@ -34,6 +36,8 @@ function profileToUser(
     avatarUrl: profile.avatar_url ?? undefined,
     connectedPlatforms,
     createdAt: profile.created_at,
+    role,
+    permissions,
   }
 }
 
@@ -168,7 +172,7 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
     return
   }
 
-  const user = profileToUser(req.user!.id, req.user!.email, profile as Parameters<typeof profileToUser>[2])
+  const user = profileToUser(req.user!.id, req.user!.email, req.user!.role, req.user!.permissions, profile as Parameters<typeof profileToUser>[4])
   const result: ApiResult<User> = { data: user, error: null }
   res.json(result)
 })
