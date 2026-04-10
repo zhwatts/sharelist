@@ -19,20 +19,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   // On mount, restore session from localStorage.
-  // Also handles magic link landings — Supabase appends #access_token=...&type=magiclink
-  // to whatever redirect_to URL is configured, so we intercept it here regardless of route.
+  // Magic link tokens are pre-stored into localStorage by main.tsx before
+  // React mounts, so they are always available here.
   useEffect(() => {
     const restore = async () => {
-      const hash = window.location.hash.slice(1)
-      const params = new URLSearchParams(hash)
-      const hashToken = params.get('access_token')
-      const hashType = params.get('type')
-
-      if (hashToken && hashType === 'magiclink') {
-        window.history.replaceState(null, '', window.location.pathname)
-        api.storeToken(hashToken)
-      }
-
       const token = localStorage.getItem('sl_access_token')
       if (!token) {
         setLoading(false)
