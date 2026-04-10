@@ -171,13 +171,32 @@ router.post('/:id/resend-verification', requireAdminOrSelfManage, async (req: Re
 // POST /admin/users/:id/unverify — clear email confirmation
 // updateUserById({ email_confirm: false }) is a no-op in Supabase — must use
 // a security-definer SQL function to set email_confirmed_at = null directly.
+//
+// NOTE: We use fetch() rather than supabaseAdmin.rpc() here because the shared
+// supabase-js singleton's internal auth state can be polluted by earlier calls to
+// auth client methods (e.g. auth.signInWithOtp in the magic-link route), causing
+// PostgREST to receive a user JWT instead of the service role key and resulting in
+// "permission denied" from Postgres. Explicit headers guarantee service_role is used.
 router.post('/:id/unverify', requireAdminOrSelfManage, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
+  const supabaseUrl = process.env['SUPABASE_URL']!
+  const serviceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!
 
-  const { error } = await supabaseAdmin.rpc('admin_unverify_user', { p_user_id: id })
-  if (error) {
-    log('error', 'Unverify user failed', { adminId: req.user!.id, targetId: id, error: error.message })
-    const err: ApiError = { data: null, error: { message: error.message } }
+  const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/admin_unverify_user`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': serviceKey,
+      'Authorization': `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({ p_user_id: id }),
+  })
+
+  if (!resp.ok) {
+    const body = await resp.json() as { message?: string }
+    const msg = (body as { message?: string }).message ?? `HTTP ${resp.status}`
+    log('error', 'Unverify user failed', { adminId: req.user!.id, targetId: id, error: msg })
+    const err: ApiError = { data: null, error: { message: msg } }
     res.status(500).json(err)
     return
   }
