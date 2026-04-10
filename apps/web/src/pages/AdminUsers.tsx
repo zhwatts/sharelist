@@ -47,6 +47,8 @@ export function AdminUsers() {
   // Inline action loading
   const [suspendLoading, setSuspendLoading] = useState(false)
   const [verifyLoading, setVerifyLoading] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const canAdd = me?.permissions.includes('usermanage:add') ?? false
   const canSuspend = me?.permissions.includes('usermanage:suspend') ?? false
@@ -71,6 +73,7 @@ export function AdminUsers() {
     setProfileError(null); setProfileSuccess(false)
     setPwdError(null); setPwdSuccess(false)
     setPermError(null); setPermSuccess(false)
+    setDeleteConfirm(false)
   }
 
   const closeManage = () => setTarget(null)
@@ -152,6 +155,16 @@ export function AdminUsers() {
     if (api.isError(result)) { setPermError(result.error.message); return }
     setPermSuccess(true)
     await reloadAndSync(target.id)
+  }
+
+  const handleDelete = async () => {
+    if (!target) return
+    setDeleteLoading(true)
+    const result = await api.deleteAdminUser(target.id)
+    setDeleteLoading(false)
+    if (api.isError(result)) { alert(result.error.message); return }
+    closeManage()
+    await load()
   }
 
   if (loadError) {
@@ -401,6 +414,36 @@ export function AdminUsers() {
                       </button>
                     </div>
                   </form>
+                </section>
+              )}
+              {/* Danger zone */}
+              {isAdmin && !isSelf && (
+                <section className="px-6 py-5">
+                  <h3 className="text-sm font-semibold text-red-600 mb-3">Danger zone</h3>
+                  {!deleteConfirm ? (
+                    <button
+                      onClick={() => setDeleteConfirm(true)}
+                      className="text-sm px-4 py-2 rounded border border-red-300 text-red-700 hover:bg-red-50"
+                    >
+                      Delete user
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm text-red-700">Permanently delete <strong>{target?.email}</strong> and all their data? This cannot be undone.</p>
+                      <button
+                        onClick={handleDelete} disabled={deleteLoading}
+                        className="shrink-0 text-sm px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {deleteLoading ? 'Deleting…' : 'Confirm delete'}
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(false)}
+                        className="shrink-0 text-sm px-3 py-2 rounded border hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </section>
               )}
             </div>
