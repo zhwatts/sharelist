@@ -143,10 +143,12 @@ router.post('/:id/resend-verification', requireAdmin, async (req: Request, res: 
 })
 
 // POST /admin/users/:id/unverify — clear email confirmation (admin role)
+// updateUserById({ email_confirm: false }) is a no-op in Supabase — must use
+// a security-definer SQL function to set email_confirmed_at = null directly.
 router.post('/:id/unverify', requireAdmin, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
-  const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { email_confirm: false })
+  const { error } = await supabaseAdmin.rpc('admin_unverify_user', { p_user_id: id })
   if (error) {
     log('error', 'Unverify user failed', { adminId: req.user!.id, targetId: id, error: error.message })
     const err: ApiError = { data: null, error: { message: error.message } }
