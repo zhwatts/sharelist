@@ -34,34 +34,57 @@ export function Profile() {
     navigate('/signin')
   }
 
+  const initials = (user.displayName ?? user.email ?? '?').charAt(0).toUpperCase()
+
   return (
-    <div className="max-w-md mx-auto mt-16 p-6">
-      <h1 className="text-2xl font-bold mb-2">Profile</h1>
-      <p className="text-gray-500 text-sm mb-6">{user.email}</p>
-      <form onSubmit={handleSave} className="flex flex-col gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Display name</label>
-          <input
-            type="text" value={displayName}
-            onChange={e => setDisplayName(e.target.value)}
-            className="border rounded px-3 py-2 w-full"
-          />
+    <div className="max-w-md mx-auto px-4 py-12">
+      {/* Avatar + identity */}
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-14 h-14 rounded-full bg-sl-accent/15 border border-sl-accent/30 flex items-center justify-center text-xl font-bold text-sl-accent select-none shrink-0">
+          {initials}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Avatar URL</label>
-          <input
-            type="url" value={avatarUrl} placeholder="https://…"
-            onChange={e => setAvatarUrl(e.target.value)}
-            className="border rounded px-3 py-2 w-full"
-          />
+        <div className="min-w-0">
+          <p className="text-lg font-semibold text-sl-text truncate">{user.displayName ?? user.email}</p>
+          {user.displayName && <p className="text-sm text-sl-muted truncate">{user.email}</p>}
         </div>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        {success && <p className="text-green-600 text-sm">Saved.</p>}
-        <button type="submit" disabled={loading} className="bg-gray-900 text-white py-2 rounded hover:bg-gray-700 disabled:opacity-50">
-          {loading ? 'Saving…' : 'Save changes'}
-        </button>
-      </form>
-      <button onClick={handleSignOut} className="mt-6 text-sm text-gray-500 hover:text-gray-900 underline">
+      </div>
+
+      {/* Profile card */}
+      <div className="bg-sl-surface border border-sl-border rounded-[20px] p-6 shadow-2xl">
+        <p className="text-xs font-semibold uppercase tracking-wider text-sl-muted mb-5">Profile</p>
+        <form onSubmit={handleSave} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-sm font-medium text-sl-text mb-1.5">Display name</label>
+            <input
+              type="text" value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              placeholder={user.email?.split('@')[0]}
+              className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-sl-text mb-1.5">Avatar URL</label>
+            <input
+              type="url" value={avatarUrl} placeholder="https://…"
+              onChange={e => setAvatarUrl(e.target.value)}
+              className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors"
+            />
+          </div>
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {success && <p className="text-sl-mint text-sm font-medium">✓ Saved</p>}
+          <button
+            type="submit" disabled={loading}
+            className="bg-sl-accent text-sl-bg py-2.5 rounded-xl text-sm font-semibold hover:bg-sl-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? 'Saving…' : 'Save changes'}
+          </button>
+        </form>
+      </div>
+
+      <button
+        onClick={handleSignOut}
+        className="mt-6 text-sm text-sl-muted hover:text-red-400 transition-colors"
+      >
         Sign out
       </button>
     </div>
