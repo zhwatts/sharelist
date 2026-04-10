@@ -39,8 +39,25 @@ function App() {
         },
         components: {
           Button: { primaryColor: SL.accent },
-          Input: { colorBgContainer: SL.bg },
           Badge: { dotSize: 8 },
+          Progress: { circleTextColor: SL.text },
+          Form: { labelColor: SL.text },
+          Input: { colorTextPlaceholder: SL.muted },
+          Table: {
+            headerBg: 'rgba(28, 31, 33, 0.6)',
+            headerColor: '#94A3B8',
+            rowHoverBg: 'rgba(56, 189, 248, 0.05)',
+            borderColor: SL.border,
+          },
+          Drawer: {
+            colorBgElevated: SL.bg,
+            colorText: SL.text,
+          },
+          Modal: {
+            contentBg: 'rgba(17, 19, 20, 0.98)',
+            headerBg: 'rgba(17, 19, 20, 0.98)',
+            borderRadiusLG: 16,
+          },
         },
       }}
     >
