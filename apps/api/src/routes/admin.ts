@@ -290,7 +290,7 @@ router.put('/:id/permissions', requireAdmin, async (req: Request, res: Response)
     return
   }
 
-  const valid = ['usermanage:add', 'usermanage:suspend', 'usermanage:updatepassword', 'usermanage:listusers']
+  const valid = ['usermanage:add', 'usermanage:suspend', 'usermanage:updatepassword', 'usermanage:listusers', 'usermanage:deleteusers']
   const invalid = (permissions as string[]).filter(p => !valid.includes(p))
   if (invalid.length > 0) {
     res.status(400).json({ data: null, error: { message: `Unknown permissions: ${invalid.join(', ')}` } })
@@ -313,8 +313,8 @@ router.put('/:id/permissions', requireAdmin, async (req: Request, res: Response)
   res.json(result)
 })
 
-// DELETE /admin/users/:id — hard delete; admin role required (not a named user-manage permission)
-router.delete('/:id', requireAdmin, async (req: Request, res: Response) => {
+// DELETE /admin/users/:id — hard delete; requires usermanage:deleteusers permission
+router.delete('/:id', requirePermission('usermanage:deleteusers'), async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
   const { error } = await supabaseAdmin.auth.admin.deleteUser(id)

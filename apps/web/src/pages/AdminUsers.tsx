@@ -8,6 +8,7 @@ const PERMISSION_META = [
   { key: 'usermanage:add', label: 'Create users', description: 'Can create new user accounts' },
   { key: 'usermanage:suspend', label: 'Suspend users', description: 'Can suspend and unsuspend accounts' },
   { key: 'usermanage:updatepassword', label: 'Reset passwords', description: 'Can reset passwords for other users' },
+  { key: 'usermanage:deleteusers', label: 'Delete users', description: 'Can permanently delete user accounts' },
 ]
 
 export function AdminUsers() {
@@ -58,6 +59,7 @@ export function AdminUsers() {
   const canAdd = me?.permissions.includes('usermanage:add') ?? false
   const canSuspend = me?.permissions.includes('usermanage:suspend') ?? false
   const canResetPassword = me?.permissions.includes('usermanage:updatepassword') ?? false
+  const canDelete = me?.permissions.includes('usermanage:deleteusers') ?? false
   const isAdmin = me?.role === 'admin'
   const isSelf = target?.id === me?.id
   // readOnly: can view the modal but has no write permissions
@@ -522,7 +524,7 @@ export function AdminUsers() {
               )}
 
               {/* Danger zone */}
-              {isAdmin && !isSelf && (
+              {canDelete && !isSelf && (
                 <section className="px-6 py-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-red-400 mb-4">Danger zone</p>
                   {!deleteConfirm ? (
