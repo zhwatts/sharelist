@@ -200,7 +200,7 @@ export function AdminUsers() {
   const handleMagicLink = async () => {
     if (!target) return
     setMagicLinkLoading(true); setMagicLinkSuccess(false)
-    const result = await api.sendMagicLink(target.id)
+    const result = await api.sendMagicLink(target.id, `${window.location.origin}/magic-link`)
     setMagicLinkLoading(false)
     if (api.isError(result)) return
     setMagicLinkSuccess(true)

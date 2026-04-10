@@ -188,8 +188,10 @@ router.post('/:id/unverify', requireAdminOrSelfManage, async (req: Request, res:
 })
 
 // POST /admin/users/:id/magic-link — send a magic login link to the user's email
+// Body: { redirectTo } — frontend URL Supabase appends the token hash to
 router.post('/:id/magic-link', requireAdminOrSelfManage, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
+  const { redirectTo } = req.body as { redirectTo?: string }
 
   const { data: { user }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(id)
   if (getUserError || !user?.email) {
@@ -200,7 +202,10 @@ router.post('/:id/magic-link', requireAdminOrSelfManage, async (req: Request, re
 
   const { error } = await supabaseAdmin.auth.signInWithOtp({
     email: user.email,
-    options: { shouldCreateUser: false },
+    options: {
+      shouldCreateUser: false,
+      ...(redirectTo ? { emailRedirectTo: redirectTo } : {}),
+    },
   })
   if (error) {
     log('error', 'Magic link send failed', { adminId: req.user!.id, targetId: id, error: error.message })

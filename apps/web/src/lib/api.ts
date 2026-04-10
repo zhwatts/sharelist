@@ -146,8 +146,11 @@ export function unverifyUser(id: string): Promise<ApiResult<{ success: boolean }
   return request<{ success: boolean }>(`/admin/users/${id}/unverify`, { method: 'POST' })
 }
 
-export function sendMagicLink(id: string): Promise<ApiResult<{ success: boolean }>> {
-  return request<{ success: boolean }>(`/admin/users/${id}/magic-link`, { method: 'POST' })
+export function sendMagicLink(id: string, redirectTo: string): Promise<ApiResult<{ success: boolean }>> {
+  return request<{ success: boolean }>(`/admin/users/${id}/magic-link`, {
+    method: 'POST',
+    body: JSON.stringify({ redirectTo }),
+  })
 }
 
 export function resendVerificationEmail(id: string): Promise<ApiResult<{ success: boolean }>> {

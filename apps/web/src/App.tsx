@@ -7,6 +7,7 @@ import { SignIn } from './pages/SignIn'
 import { SignUp } from './pages/SignUp'
 import { PasswordResetRequest } from './pages/PasswordResetRequest'
 import { PasswordResetConfirm } from './pages/PasswordResetConfirm'
+import { MagicLinkConfirm } from './pages/MagicLinkConfirm'
 import { Profile } from './pages/Profile'
 import { AdminUsers } from './pages/AdminUsers'
 
@@ -58,6 +59,7 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<PasswordResetRequest />} />
           <Route path="/reset-password" element={<PasswordResetConfirm />} />
+          <Route path="/magic-link" element={<MagicLinkConfirm />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route
             path="/admin/users"
