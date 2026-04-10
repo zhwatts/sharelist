@@ -311,7 +311,7 @@ export function AdminUsers() {
           <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
 
             {/* Header */}
-            <div className="px-6 py-5 border-b flex items-center gap-4">
+            <div className="px-6 py-5 flex items-center gap-4">
               <div className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center text-base font-semibold text-gray-600 shrink-0 select-none">
                 {(target.displayName ?? target.email ?? '?').charAt(0).toUpperCase()}
               </div>
@@ -336,10 +336,10 @@ export function AdminUsers() {
             </div>
 
             {/* Scrollable body */}
-            <div className="overflow-y-auto flex-1">
+            <div className="overflow-y-auto flex-1 divide-y divide-gray-100">
 
               {/* Profile */}
-              <section className="px-6 py-5 border-b">
+              <section className="px-6 py-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Profile</p>
                 <form onSubmit={handleProfileSave} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -374,7 +374,7 @@ export function AdminUsers() {
               </section>
 
               {/* Authentication */}
-              <section className="px-6 py-5 border-b">
+              <section className="px-6 py-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Authentication</p>
                 <div className="space-y-5">
 
@@ -433,7 +433,7 @@ export function AdminUsers() {
 
               {/* Account access */}
               {!isSelf && (
-                <section className="px-6 py-5 border-b">
+                <section className="px-6 py-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Account access</p>
                   <div className="flex items-center justify-between gap-4">
                     <div>
@@ -460,7 +460,7 @@ export function AdminUsers() {
 
               {/* Security */}
               {canResetPassword && !isSelf && (
-                <section className="px-6 py-5 border-b">
+                <section className="px-6 py-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Security</p>
                   <form onSubmit={handlePasswordSave} className="space-y-3">
                     <div>
@@ -486,7 +486,7 @@ export function AdminUsers() {
 
               {/* Permissions */}
               {!isSelf && (
-                <section className="px-6 py-5 border-b">
+                <section className="px-6 py-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Permissions</p>
                   <form onSubmit={handlePermSave} className="space-y-1">
                     {PERMISSION_META.map(({ key, label, description }) => (
