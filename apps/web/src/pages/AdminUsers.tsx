@@ -109,28 +109,8 @@ export function AdminUsers() {
         {/* Rows */}
         {isLoading ? (
           Array.from({ length: 5 }).map((_, index) => (
-            <div key={`skeleton-${index}`} style={{ padding: '16px 20px', borderBottom: index < 4 ? '1px solid rgba(56, 189, 248, 0.05)' : 'none' }}>
-              <Flex align="center">
-                <Flex align="center" gap={12} style={{ flex: '1 1 35%', paddingRight: '16px', minWidth: 0 }}>
-                  <Skeleton.Avatar active size={40} style={{ borderRadius: '12px', background: 'rgba(56, 189, 248, 0.1)', flexShrink: 0 }} />
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <Skeleton.Input active size="small" style={{ width: '70%', marginBottom: '6px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '6px', height: '16px' }} />
-                    <Skeleton.Input active size="small" style={{ width: '85%', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '6px', height: '14px' }} />
-                  </div>
-                </Flex>
-                <div style={{ width: '110px', paddingRight: '16px' }}>
-                  <Skeleton.Button active size="small" style={{ width: '70px', height: '24px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.1)' }} />
-                </div>
-                <div style={{ flex: '1 1 25%', paddingRight: '16px' }}>
-                  <Skeleton.Input active size="small" style={{ width: '90px', height: '14px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '6px' }} />
-                </div>
-                <div style={{ width: '110px', paddingRight: '16px' }}>
-                  <Skeleton.Input active size="small" style={{ width: '80px', height: '14px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '6px' }} />
-                </div>
-                <div style={{ width: '100px' }}>
-                  <Skeleton.Button active size="small" style={{ width: '75px', height: '32px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.1)' }} />
-                </div>
-              </Flex>
+            <div key={`skeleton-${index}`} style={{ padding: '14px 20px', borderBottom: index < 4 ? '1px solid rgba(56, 189, 248, 0.05)' : 'none' }}>
+              <Skeleton.Input active style={{ width: '100%', height: '36px', borderRadius: '8px' }} />
             </div>
           ))
         ) : users.length === 0 ? (
