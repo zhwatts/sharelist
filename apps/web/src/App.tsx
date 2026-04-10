@@ -8,6 +8,7 @@ import { PasswordResetRequest } from './pages/PasswordResetRequest'
 import { PasswordResetConfirm } from './pages/PasswordResetConfirm'
 import { MagicLinkConfirm } from './pages/MagicLinkConfirm'
 import { Profile } from './pages/Profile'
+import { PlaylistView } from './pages/PlaylistView'
 import { AdminUsers } from './pages/AdminUsers'
 
 const SL = {
@@ -85,7 +86,7 @@ function App() {
 
         {/* Authenticated routes — wrapped in MainLayout */}
         <Route element={<MainLayout />}>
-          <Route index element={<Profile />} />
+          <Route index element={<PlaylistView />} />
           <Route path="/profile" element={<Profile />} />
           <Route
             path="/admin/users"
