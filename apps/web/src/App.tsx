@@ -11,7 +11,7 @@ import { AdminUsers } from './pages/AdminUsers'
 
 function App() {
   return (
-    <div className="min-h-screen bg-sl-bg font-sans" style={{ backgroundImage: 'radial-gradient(circle at 20% 10%, rgba(56,189,248,0.06) 0%, rgba(56,189,248,0.02) 40%, transparent 70%)' }}>
+    <div className="min-h-screen bg-[#111314] font-sans" style={{ backgroundImage: 'radial-gradient(circle at 20% 10%, rgba(56,189,248,0.06) 0%, rgba(56,189,248,0.02) 40%, transparent 70%)' }}>
       <Nav />
       <Routes>
         <Route path="/signin" element={<SignIn />} />

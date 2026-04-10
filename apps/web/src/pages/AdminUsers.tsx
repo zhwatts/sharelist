@@ -212,7 +212,7 @@ export function AdminUsers() {
         {canAdd && (
           <button
             onClick={() => setShowAddForm(v => !v)}
-            className="bg-sl-accent text-sl-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-sl-accent/90"
+            className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90"
           >
             {showAddForm ? 'Cancel' : '+ Add user'}
           </button>
@@ -221,25 +221,25 @@ export function AdminUsers() {
 
       {/* Add user form */}
       {showAddForm && (
-        <form onSubmit={handleAdd} className="mb-6 p-5 border border-sl-border rounded-[20px] bg-sl-surface flex flex-col gap-3">
-          <h2 className="font-semibold text-sl-text">New user</h2>
+        <form onSubmit={handleAdd} className="mb-6 p-5 border border-[#2A2D30] rounded-[20px] bg-[#1C1F21] flex flex-col gap-3">
+          <h2 className="font-semibold text-slate-100">New user</h2>
           <div className="grid grid-cols-2 gap-3">
             <input
               type="email" placeholder="Email address" required value={addEmail}
               onChange={e => setAddEmail(e.target.value)}
-              className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors"
+              className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors"
             />
             <input
               type="password" placeholder="Temporary password (min 6 chars)" required minLength={6} value={addPassword}
               onChange={e => setAddPassword(e.target.value)}
-              className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors"
+              className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors"
             />
           </div>
           {addError && <p className="text-red-400 text-sm">{addError}</p>}
           <div>
             <button
               type="submit" disabled={addLoading}
-              className="bg-sl-accent text-sl-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-sl-accent/90 disabled:opacity-50"
+              className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90 disabled:opacity-50"
             >
               {addLoading ? 'Creating…' : 'Create user'}
             </button>
@@ -248,30 +248,30 @@ export function AdminUsers() {
       )}
 
       {/* User table */}
-      <div className="bg-sl-surface border border-sl-border rounded-[20px] overflow-hidden">
+      <div className="bg-[#1C1F21] border border-[#2A2D30] rounded-[20px] overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-sl-bg/50 border-b border-sl-border">
+          <thead className="bg-[#111314]/50 border-b border-[#2A2D30]">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-sl-muted text-xs uppercase tracking-wide">User</th>
-              <th className="text-left px-4 py-3 font-medium text-sl-muted text-xs uppercase tracking-wide">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-sl-muted text-xs uppercase tracking-wide">Permissions</th>
-              <th className="text-left px-4 py-3 font-medium text-sl-muted text-xs uppercase tracking-wide">Joined</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">User</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Status</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Permissions</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Joined</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
             {users.map(u => (
-              <tr key={u.id} className="border-b last:border-0 hover:bg-sl-accent/5 transition-colors">
+              <tr key={u.id} className="border-b last:border-0 hover:bg-sky-400/5 transition-colors">
                 <td className="px-4 py-3">
-                  <div className="font-medium text-sl-text">{u.displayName ?? u.email}</div>
-                  {u.displayName && <div className="text-sl-muted text-xs">{u.email}</div>}
+                  <div className="font-medium text-slate-100">{u.displayName ?? u.email}</div>
+                  {u.displayName && <div className="text-slate-500 text-xs">{u.email}</div>}
                   {!u.emailConfirmed && (
                     <span className="text-xs text-amber-400 font-medium">unverified</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                    u.status === 'suspended' ? 'bg-red-500/15 text-red-400' : 'bg-sl-mint/15 text-sl-mint'
+                    u.status === 'suspended' ? 'bg-red-500/15 text-red-400' : 'bg-emerald-400/15 text-emerald-400'
                   }`}>
                     {u.status}
                   </span>
@@ -279,22 +279,22 @@ export function AdminUsers() {
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {u.permissions.length === 0
-                      ? <span className="text-sl-muted text-xs">none</span>
+                      ? <span className="text-slate-500 text-xs">none</span>
                       : u.permissions.map(p => (
-                        <span key={p} className="bg-sl-accent/10 text-sl-accent text-xs px-1.5 py-0.5 rounded-md font-medium">
+                        <span key={p} className="bg-sky-400/10 text-sky-400 text-xs px-1.5 py-0.5 rounded-md font-medium">
                           {p.replace('usermanage:', '')}
                         </span>
                       ))
                     }
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sl-muted text-xs">
+                <td className="px-4 py-3 text-slate-500 text-xs">
                   {new Date(u.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => openManage(u)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-sl-border text-sl-muted hover:bg-sl-accent/5 font-medium transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2D30] text-slate-500 hover:bg-sky-400/5 font-medium transition-colors"
                   >
                     Manage
                   </button>
@@ -303,7 +303,7 @@ export function AdminUsers() {
             ))}
             {users.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-sl-muted">No users found</td>
+                <td colSpan={5} className="px-4 py-12 text-center text-slate-500">No users found</td>
               </tr>
             )}
           </tbody>
@@ -313,27 +313,27 @@ export function AdminUsers() {
       {/* Manage modal */}
       {target && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-sl-surface border border-sl-border rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="bg-[#1C1F21] border border-[#2A2D30] rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
 
             {/* Header */}
             <div className="px-6 py-5 flex items-center gap-4">
-              <div className="w-11 h-11 rounded-full bg-sl-accent/15 border border-sl-accent/30 flex items-center justify-center text-base font-semibold text-sl-accent shrink-0 select-none">
+              <div className="w-11 h-11 rounded-full bg-sky-400/15 border border-sky-400/30 flex items-center justify-center text-base font-semibold text-sky-400 shrink-0 select-none">
                 {(target.displayName ?? target.email ?? '?').charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sl-text leading-tight truncate">
+                <p className="font-semibold text-slate-100 leading-tight truncate">
                   {target.displayName ?? target.email}
                 </p>
                 {target.displayName && (
-                  <p className="text-sm text-sl-muted truncate">{target.email}</p>
+                  <p className="text-sm text-slate-500 truncate">{target.email}</p>
                 )}
               </div>
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
-                target.status === 'suspended' ? 'bg-red-500/15 text-red-400' : 'bg-sl-mint/15 text-sl-mint'
+                target.status === 'suspended' ? 'bg-red-500/15 text-red-400' : 'bg-emerald-400/15 text-emerald-400'
               }`}>
                 {target.status}
               </span>
-              <button onClick={closeManage} className="text-sl-muted hover:text-sl-text transition-colors shrink-0 ml-1">
+              <button onClick={closeManage} className="text-slate-500 hover:text-slate-100 transition-colors shrink-0 ml-1">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -341,27 +341,27 @@ export function AdminUsers() {
             </div>
 
             {/* Scrollable body */}
-            <div className="overflow-y-auto flex-1 divide-y divide-sl-border/50">
+            <div className="overflow-y-auto flex-1 divide-y divide-[#2A2D30]/50">
 
               {/* Profile */}
               <section className="px-6 py-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-sl-muted mb-4">Profile</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Profile</p>
                 <form onSubmit={handleProfileSave} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-sl-text mb-1.5">Display name</label>
+                      <label className="block text-sm font-medium text-slate-100 mb-1.5">Display name</label>
                       <input
                         type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
                         placeholder="Display name" disabled={readOnly}
-                        className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors disabled:bg-sl-bg/50 disabled:text-sl-muted disabled:cursor-not-allowed"
+                        className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors disabled:bg-[#111314]/50 disabled:text-slate-500 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-sl-text mb-1.5">Avatar URL</label>
+                      <label className="block text-sm font-medium text-slate-100 mb-1.5">Avatar URL</label>
                       <input
                         type="url" value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)}
                         placeholder="https://…" disabled={readOnly}
-                        className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors disabled:bg-sl-bg/50 disabled:text-sl-muted disabled:cursor-not-allowed"
+                        className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors disabled:bg-[#111314]/50 disabled:text-slate-500 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -369,10 +369,10 @@ export function AdminUsers() {
                   {!readOnly && (
                     <div className="flex items-center gap-3">
                       <button type="submit" disabled={profileLoading}
-                        className="bg-sl-accent text-sl-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-sl-accent/90 disabled:opacity-50">
+                        className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90 disabled:opacity-50">
                         {profileLoading ? 'Saving…' : 'Save changes'}
                       </button>
-                      {profileSuccess && <span className="text-sm text-sl-mint font-medium">✓ Saved</span>}
+                      {profileSuccess && <span className="text-sm text-emerald-400 font-medium">✓ Saved</span>}
                     </div>
                   )}
                 </form>
@@ -380,37 +380,37 @@ export function AdminUsers() {
 
               {/* Authentication */}
               <section className="px-6 py-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-sl-muted mb-4">Authentication</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Authentication</p>
                 <div className="space-y-5">
 
                   {/* Email verification row */}
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-sl-text">Email verification</p>
-                      <p className="text-xs text-sl-muted mt-0.5">{target.email}</p>
+                      <p className="text-sm font-medium text-slate-100">Email verification</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{target.email}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        target.emailConfirmed ? 'bg-sl-mint/15 text-sl-mint' : 'bg-amber-500/15 text-amber-400'
+                        target.emailConfirmed ? 'bg-emerald-400/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'
                       }`}>
                         {target.emailConfirmed ? '✓ Verified' : 'Unverified'}
                       </span>
                       {!readOnly && (target.emailConfirmed ? (
                         <button onClick={handleUnverify} disabled={unverifyLoading}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-sl-border text-sl-muted hover:bg-sl-accent/5 disabled:opacity-50 font-medium">
+                          className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2D30] text-slate-500 hover:bg-sky-400/5 disabled:opacity-50 font-medium">
                           {unverifyLoading ? '…' : 'Revoke'}
                         </button>
                       ) : (
                         <>
                           <button onClick={handleVerify} disabled={verifyLoading}
-                            className="text-xs px-3 py-1.5 rounded-lg border border-sl-mint/40 text-sl-mint hover:bg-sl-mint/10 disabled:opacity-50 font-medium">
+                            className="text-xs px-3 py-1.5 rounded-lg border border-emerald-400/40 text-emerald-400 hover:bg-emerald-400/10 disabled:opacity-50 font-medium">
                             {verifyLoading ? '…' : 'Mark verified'}
                           </button>
                           <button onClick={handleResendVerification} disabled={resendLoading}
-                            className="text-xs px-3 py-1.5 rounded-lg border border-sl-border text-sl-muted hover:bg-sl-accent/5 disabled:opacity-50 font-medium">
+                            className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2D30] text-slate-500 hover:bg-sky-400/5 disabled:opacity-50 font-medium">
                             {resendLoading ? '…' : 'Resend email'}
                           </button>
-                          {resendSuccess && <span className="text-xs text-sl-mint font-medium">✓ Sent</span>}
+                          {resendSuccess && <span className="text-xs text-emerald-400 font-medium">✓ Sent</span>}
                         </>
                       ))}
                     </div>
@@ -420,15 +420,15 @@ export function AdminUsers() {
                   {!readOnly && (
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-sm font-medium text-sl-text">Magic login link</p>
-                        <p className="text-xs text-sl-muted mt-0.5">Send a one-time passwordless sign-in link</p>
+                        <p className="text-sm font-medium text-slate-100">Magic login link</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Send a one-time passwordless sign-in link</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <button onClick={handleMagicLink} disabled={magicLinkLoading}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-sl-border text-sl-muted hover:bg-sl-accent/5 disabled:opacity-50 font-medium">
+                          className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2D30] text-slate-500 hover:bg-sky-400/5 disabled:opacity-50 font-medium">
                           {magicLinkLoading ? 'Sending…' : 'Send link'}
                         </button>
-                        {magicLinkSuccess && <span className="text-xs text-sl-mint font-medium">✓ Sent</span>}
+                        {magicLinkSuccess && <span className="text-xs text-emerald-400 font-medium">✓ Sent</span>}
                       </div>
                     </div>
                   )}
@@ -439,11 +439,11 @@ export function AdminUsers() {
               {/* Account access */}
               {canActOnTarget && (
                 <section className="px-6 py-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-sl-muted mb-4">Account access</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Account access</p>
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-medium text-sl-text">Login access</p>
-                      <p className="text-xs text-sl-muted mt-0.5">
+                      <p className="text-sm font-medium text-slate-100">Login access</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
                         {target.status === 'suspended'
                           ? 'This user is blocked from signing in'
                           : 'This user can sign in normally'}
@@ -453,7 +453,7 @@ export function AdminUsers() {
                       <button onClick={handleSuspendToggle} disabled={suspendLoading}
                         className={`shrink-0 text-xs px-4 py-2 rounded-lg border font-medium disabled:opacity-50 transition-colors ${
                           target.status === 'suspended'
-                            ? 'border-sl-mint/40 text-sl-mint hover:bg-sl-mint/10'
+                            ? 'border-emerald-400/40 text-emerald-400 hover:bg-emerald-400/10'
                             : 'border-red-500/30 text-red-400 hover:bg-red-500/10'
                         }`}>
                         {suspendLoading ? '…' : target.status === 'suspended' ? 'Restore access' : 'Suspend access'}
@@ -466,25 +466,25 @@ export function AdminUsers() {
               {/* Security */}
               {(canResetPassword || (canSelfManage && isSelf)) && canActOnTarget && (
                 <section className="px-6 py-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-sl-muted mb-4">Security</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Security</p>
                   <form onSubmit={handlePasswordSave} className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-sl-text mb-1.5">Set new password</label>
+                      <label className="block text-sm font-medium text-slate-100 mb-1.5">Set new password</label>
                       <div className="flex gap-3">
                         <input
                           type="password" required minLength={6} value={newPassword}
                           onChange={e => setNewPassword(e.target.value)}
                           placeholder="Min 6 characters"
-                          className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted flex-1 focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors"
+                          className="bg-[#111314] border border-[#2A2D30] rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 flex-1 focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400/50 transition-colors"
                         />
                         <button type="submit" disabled={pwdLoading}
-                          className="bg-sl-accent text-sl-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-sl-accent/90 disabled:opacity-50 whitespace-nowrap">
+                          className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90 disabled:opacity-50 whitespace-nowrap">
                           {pwdLoading ? 'Saving…' : 'Set password'}
                         </button>
                       </div>
                     </div>
                     {pwdError && <p className="text-red-400 text-sm">{pwdError}</p>}
-                    {pwdSuccess && <p className="text-sm text-sl-mint font-medium">✓ Password updated</p>}
+                    {pwdSuccess && <p className="text-sm text-emerald-400 font-medium">✓ Password updated</p>}
                   </form>
                 </section>
               )}
@@ -492,13 +492,13 @@ export function AdminUsers() {
               {/* Permissions */}
               {canActOnTarget && (
                 <section className="px-6 py-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-sl-muted mb-4">Permissions</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Permissions</p>
                   <form onSubmit={handlePermSave} className="space-y-1">
                     {PERMISSION_META.map(({ key, label, description }) => (
                       <div key={key} className="flex items-center justify-between py-2.5">
                         <div>
-                          <p className="text-sm font-medium text-sl-text">{label}</p>
-                          <p className="text-xs text-sl-muted mt-0.5">{description}</p>
+                          <p className="text-sm font-medium text-slate-100">{label}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{description}</p>
                         </div>
                         <button
                           type="button"
@@ -506,8 +506,8 @@ export function AdminUsers() {
                           onClick={() => (canEditPermissions || (canSelfManage && isSelf)) && setPermSelection(prev =>
                             prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key]
                           )}
-                          className={`relative inline-flex h-6 w-11 shrink-0 ml-6 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sl-accent disabled:cursor-not-allowed disabled:opacity-60 ${
-                            permSelection.includes(key) ? 'bg-sl-accent' : 'bg-sl-border'
+                          className={`relative inline-flex h-6 w-11 shrink-0 ml-6 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 disabled:cursor-not-allowed disabled:opacity-60 ${
+                            permSelection.includes(key) ? 'bg-sky-400' : 'bg-[#2A2D30]'
                           }`}
                         >
                           <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
@@ -520,10 +520,10 @@ export function AdminUsers() {
                     {(canEditPermissions || (canSelfManage && isSelf)) && (
                       <div className="flex items-center gap-3 pt-3">
                         <button type="submit" disabled={permLoading}
-                          className="bg-sl-accent text-sl-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-sl-accent/90 disabled:opacity-50">
+                          className="bg-sky-400 text-[#111314] px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-400/90 disabled:opacity-50">
                           {permLoading ? 'Saving…' : 'Save permissions'}
                         </button>
-                        {permSuccess && <span className="text-sm text-sl-mint font-medium">✓ Saved</span>}
+                        {permSuccess && <span className="text-sm text-emerald-400 font-medium">✓ Saved</span>}
                       </div>
                     )}
                   </form>
@@ -557,7 +557,7 @@ export function AdminUsers() {
                           {deleteLoading ? 'Deleting…' : 'Yes, delete permanently'}
                         </button>
                         <button onClick={() => setDeleteConfirm(false)}
-                          className="text-sm px-4 py-2 rounded-lg border border-sl-border bg-sl-surface hover:bg-sl-accent/5 text-sl-muted font-medium">
+                          className="text-sm px-4 py-2 rounded-lg border border-[#2A2D30] bg-[#1C1F21] hover:bg-sky-400/5 text-slate-500 font-medium">
                           Cancel
                         </button>
                       </div>
@@ -569,9 +569,9 @@ export function AdminUsers() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t bg-sl-bg/30 rounded-b-2xl flex justify-end">
+            <div className="px-6 py-4 border-t bg-[#111314]/30 rounded-b-2xl flex justify-end">
               <button onClick={closeManage}
-                className="px-4 py-2 rounded-lg border border-sl-border text-sm text-sl-muted hover:bg-sl-accent/5 font-medium transition-colors">
+                className="px-4 py-2 rounded-lg border border-[#2A2D30] text-sm text-slate-500 hover:bg-sky-400/5 font-medium transition-colors">
                 Close
               </button>
             </div>
