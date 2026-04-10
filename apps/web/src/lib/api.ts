@@ -142,6 +142,10 @@ export function deleteAdminUser(id: string): Promise<ApiResult<{ success: boolea
   return request<{ success: boolean }>(`/admin/users/${id}`, { method: 'DELETE' })
 }
 
+export function resendVerificationEmail(id: string): Promise<ApiResult<{ success: boolean }>> {
+  return request<{ success: boolean }>(`/admin/users/${id}/resend-verification`, { method: 'POST' })
+}
+
 export function verifyUser(id: string): Promise<ApiResult<{ success: boolean }>> {
   return request<{ success: boolean }>(`/admin/users/${id}/verify`, { method: 'POST' })
 }

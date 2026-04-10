@@ -112,6 +112,36 @@ router.post('/:id/verify', requireAdmin, async (req: Request, res: Response) => 
   res.json(result)
 })
 
+// POST /admin/users/:id/resend-verification — resend confirmation email (admin role)
+router.post('/:id/resend-verification', requireAdmin, async (req: Request, res: Response) => {
+  const id = req.params['id'] as string
+
+  const { data: { user }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(id)
+  if (getUserError || !user?.email) {
+    const err: ApiError = { data: null, error: { message: 'User not found' } }
+    res.status(404).json(err)
+    return
+  }
+
+  if (user.email_confirmed_at) {
+    const err: ApiError = { data: null, error: { message: 'User email is already confirmed' } }
+    res.status(400).json(err)
+    return
+  }
+
+  const { error } = await supabaseAdmin.auth.resend({ type: 'signup', email: user.email })
+  if (error) {
+    log('error', 'Resend verification failed', { adminId: req.user!.id, targetId: id, error: error.message })
+    const err: ApiError = { data: null, error: { message: error.message } }
+    res.status(500).json(err)
+    return
+  }
+
+  log('info', 'Verification email resent by admin', { adminId: req.user!.id, targetId: id })
+  const result: ApiResult<{ success: boolean }> = { data: { success: true }, error: null }
+  res.json(result)
+})
+
 // PATCH /admin/users/:id — update display_name and/or avatar_url for any user (admin role)
 router.patch('/:id', requireAdmin, async (req: Request, res: Response) => {
   const id = req.params['id'] as string

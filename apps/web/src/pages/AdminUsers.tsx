@@ -49,6 +49,8 @@ export function AdminUsers() {
   const [verifyLoading, setVerifyLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
 
   const canAdd = me?.permissions.includes('usermanage:add') ?? false
   const canSuspend = me?.permissions.includes('usermanage:suspend') ?? false
@@ -74,6 +76,7 @@ export function AdminUsers() {
     setPwdError(null); setPwdSuccess(false)
     setPermError(null); setPermSuccess(false)
     setDeleteConfirm(false)
+    setResendSuccess(false)
   }
 
   const closeManage = () => setTarget(null)
@@ -155,6 +158,16 @@ export function AdminUsers() {
     if (api.isError(result)) { setPermError(result.error.message); return }
     setPermSuccess(true)
     await reloadAndSync(target.id)
+  }
+
+  const handleResendVerification = async () => {
+    if (!target) return
+    setResendLoading(true)
+    setResendSuccess(false)
+    const result = await api.resendVerificationEmail(target.id)
+    setResendLoading(false)
+    if (api.isError(result)) { alert(result.error.message); return }
+    setResendSuccess(true)
   }
 
   const handleDelete = async () => {
@@ -334,12 +347,21 @@ export function AdminUsers() {
                         {target.emailConfirmed ? 'Email verified' : 'Email unverified'}
                       </span>
                       {!target.emailConfirmed && (
-                        <button
-                          onClick={handleVerify} disabled={verifyLoading}
-                          className="text-xs px-3 py-1.5 rounded border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-50"
-                        >
-                          {verifyLoading ? 'Verifying…' : 'Mark as verified'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleVerify} disabled={verifyLoading}
+                            className="text-xs px-3 py-1.5 rounded border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-50"
+                          >
+                            {verifyLoading ? 'Verifying…' : 'Mark as verified'}
+                          </button>
+                          <button
+                            onClick={handleResendVerification} disabled={resendLoading}
+                            className="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          >
+                            {resendLoading ? 'Sending…' : 'Resend verification email'}
+                          </button>
+                          {resendSuccess && <span className="text-xs text-green-600">Sent.</span>}
+                        </div>
                       )}
                     </div>
                   )}
