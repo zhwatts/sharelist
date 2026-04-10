@@ -159,14 +159,22 @@ export function UserManagementPanel({ user, onClose, onUpdate, onDelete }: UserM
       width={640}
       centered
       closeIcon={null}
+      style={{ padding: 0 }}
       styles={{
+        container: {
+          background: 'rgba(17, 19, 20, 0.98)',
+          backdropFilter: 'blur(40px)',
+          border: '1px solid rgba(56, 189, 248, 0.3)',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6)',
+          borderRadius: '16px',
+          padding: 0,
+          overflow: 'hidden',
+        },
         body: {
           padding: 0,
           margin: 0,
           maxHeight: '85vh',
           overflowY: 'auto',
-          background: 'rgba(17, 19, 20, 0.98)',
-          borderRadius: '16px',
         },
         mask: {
           backdropFilter: 'blur(3px)',

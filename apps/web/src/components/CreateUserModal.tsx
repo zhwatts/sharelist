@@ -68,8 +68,18 @@ export function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
       footer={null}
       width={600}
       centered
+      style={{ padding: 0 }}
       styles={{
-        body: { padding: 0, maxHeight: '80vh', overflowY: 'auto', background: 'rgba(28, 31, 33, 0.95)', borderRadius: '16px' },
+        container: {
+          background: 'rgba(28, 31, 33, 0.95)',
+          backdropFilter: 'blur(40px)',
+          border: '1px solid rgba(56, 189, 248, 0.2)',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6)',
+          borderRadius: '16px',
+          padding: 0,
+          overflow: 'hidden',
+        },
+        body: { padding: 0, maxHeight: '80vh', overflowY: 'auto' },
         mask: { backdropFilter: 'blur(3px)', background: 'rgba(0, 0, 0, 0.4)' },
       }}
     >
