@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Flex, Spin, Typography, Alert, Button } from 'antd'
+import { Button, Card, Flex, Spin, Typography, Alert } from 'antd'
+import { Music2 } from 'lucide-react'
 import { storeToken } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 
-const SL = {
-  surface: '#1C1F21',
-  border: '#2A2D30',
-  text: '#F1F5F9',
-  muted: '#64748B',
-}
+const { Text } = Typography
 
 export function MagicLinkConfirm() {
   const navigate = useNavigate()
@@ -27,48 +23,92 @@ export function MagicLinkConfirm() {
       return
     }
 
-    // Clear the tokens from the URL bar before doing anything
     window.history.replaceState(null, '', window.location.pathname)
-
     storeToken(token)
 
     refreshUser().then(() => {
-      navigate('/profile', { replace: true })
+      navigate('/', { replace: true })
     }).catch(() => {
       setError('Failed to sign in. The link may have expired — please request a new one.')
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <Flex justify="center" align="center" style={{ minHeight: 'calc(100vh - 57px)', padding: 16 }}>
-      <div
+    <div style={{
+      minHeight: '100vh',
+      background: '#111314',
+      position: 'relative',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+    }}>
+      {/* Background gradient */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        background: 'radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.12) 0%, rgba(74, 222, 128, 0.08) 40%, transparent 70%)',
+      }} />
+
+      <Card
         style={{
+          maxWidth: '440px',
           width: '100%',
-          maxWidth: 448,
-          backgroundColor: SL.surface,
-          border: `1px solid ${SL.border}`,
-          borderRadius: 20,
-          padding: 32,
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-          textAlign: 'center',
+          borderRadius: '24px',
+          background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(28, 31, 33, 0.95) 50%, rgba(28, 31, 33, 0.98) 100%)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(56, 189, 248, 0.15)',
+          position: 'relative',
+          zIndex: 1,
         }}
+        styles={{ body: { padding: '48px 40px', textAlign: 'center' } }}
       >
+        {/* Logo */}
+        <Flex justify="center" style={{ marginBottom: '32px' }}>
+          <Flex align="center" gap={12}>
+            <div style={{ position: 'relative', width: '36px', height: '36px' }}>
+              <Music2 style={{ width: '30px', height: '30px', color: '#38BDF8', position: 'absolute', top: 1, left: 1, strokeWidth: 2.5 }} />
+              <Music2 style={{ width: '30px', height: '30px', color: '#38BDF8', position: 'absolute', top: 3, left: 3, opacity: 0.5, strokeWidth: 2.5 }} />
+            </div>
+            <div style={{ fontSize: '28px', lineHeight: 1 }}>
+              <span style={{ fontWeight: 300, color: 'white' }}>Share</span>
+              <span style={{ fontWeight: 700, color: '#38BDF8' }}>List</span>
+            </div>
+          </Flex>
+        </Flex>
+
         {error ? (
           <Flex vertical gap={16} align="center">
-            <Alert message={error} type="error" showIcon style={{ borderRadius: 10, width: '100%' }} />
-            <Button onClick={() => navigate('/signin')} style={{ borderRadius: 10 }}>
-              Back to sign in
+            <Alert message={error} type="error" showIcon style={{ borderRadius: '10px', width: '100%' }} />
+            <Button
+              onClick={() => navigate('/signin')}
+              style={{
+                background: 'transparent',
+                border: '1px solid #2A2D30',
+                borderRadius: '12px',
+                height: '48px',
+                fontSize: '15px',
+                fontWeight: 600,
+                color: '#F1F5F9',
+              }}
+            >
+              Back to Sign In
             </Button>
           </Flex>
         ) : (
           <Flex vertical gap={16} align="center">
             <Spin size="large" />
-            <Typography.Text style={{ color: SL.muted, fontSize: 14 }}>
+            <Text style={{ color: '#64748B', fontSize: '15px' }}>
               Signing you in…
-            </Typography.Text>
+            </Text>
           </Flex>
         )}
-      </div>
-    </Flex>
+      </Card>
+    </div>
   )
 }

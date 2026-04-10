@@ -1,21 +1,17 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Button, Flex, Form, Input, Typography, Alert } from 'antd'
+import { useNavigate } from 'react-router-dom'
+import { Button, Card, Checkbox, Flex, Form, Input, Typography, Alert } from 'antd'
+import { LockOutlined, MailOutlined } from '@ant-design/icons'
+import { Music2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
-const SL = {
-  surface: '#1C1F21',
-  border: '#2A2D30',
-  accent: '#38BDF8',
-  text: '#F1F5F9',
-  muted: '#64748B',
-}
+const { Title, Text, Link } = Typography
 
 export function SignUp() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
+  const [form] = Form.useForm()
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleFinish = async (values: { email: string; password: string }) => {
@@ -24,83 +20,185 @@ export function SignUp() {
     const err = await signUp(values.email, values.password)
     setLoading(false)
     if (err) { setError(err); return }
-    setSuccess(true)
-    setTimeout(() => navigate('/profile'), 1000)
+    navigate('/')
   }
 
   return (
-    <Flex justify="center" align="center" style={{ minHeight: 'calc(100vh - 57px)', padding: 16 }}>
-      <div
+    <div style={{
+      minHeight: '100vh',
+      background: '#111314',
+      position: 'relative',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+    }}>
+      {/* Background gradient */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        background: 'radial-gradient(circle at 50% 20%, rgba(74, 222, 128, 0.12) 0%, rgba(56, 189, 248, 0.08) 40%, transparent 70%)',
+      }} />
+
+      <Card
         style={{
+          maxWidth: '440px',
           width: '100%',
-          maxWidth: 448,
-          backgroundColor: SL.surface,
-          border: `1px solid ${SL.border}`,
-          borderRadius: 20,
-          padding: 32,
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+          borderRadius: '24px',
+          background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.08) 0%, rgba(28, 31, 33, 0.95) 50%, rgba(28, 31, 33, 0.98) 100%)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(74, 222, 128, 0.15)',
+          position: 'relative',
+          zIndex: 1,
         }}
+        styles={{ body: { padding: '48px 40px' } }}
       >
-        <Typography.Title level={3} style={{ color: SL.text, marginBottom: 4, marginTop: 0 }}>
-          Create account
-        </Typography.Title>
-        <Typography.Text style={{ color: SL.muted, fontSize: 14, display: 'block', marginBottom: 32 }}>
-          Join ShareList and start sharing playlists
-        </Typography.Text>
+        {/* Logo */}
+        <Flex justify="center" style={{ marginBottom: '20px' }}>
+          <Flex align="center" gap={12}>
+            <div style={{ position: 'relative', width: '36px', height: '36px' }}>
+              <Music2 style={{ width: '30px', height: '30px', color: '#4ADE80', position: 'absolute', top: 1, left: 1, strokeWidth: 2.5 }} />
+              <Music2 style={{ width: '30px', height: '30px', color: '#4ADE80', position: 'absolute', top: 3, left: 3, opacity: 0.5, strokeWidth: 2.5 }} />
+            </div>
+            <div style={{ fontSize: '28px', lineHeight: 1 }}>
+              <span style={{ fontWeight: 300, color: 'white' }}>Share</span>
+              <span style={{ fontWeight: 700, color: '#4ADE80' }}>List</span>
+            </div>
+          </Flex>
+        </Flex>
 
-        {success ? (
-          <Alert
-            message="Account created! Redirecting…"
-            type="success"
-            showIcon
-            style={{ borderRadius: 10 }}
-          />
-        ) : (
-          <Form layout="vertical" onFinish={handleFinish} requiredMark={false}>
-            <Form.Item
-              name="email"
-              label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Email</span>}
-              rules={[{ required: true, type: 'email' }]}
+        {/* Heading */}
+        <Flex vertical align="center" style={{ marginBottom: '40px', textAlign: 'center' }}>
+          <Title level={2} style={{ color: '#F1F5F9', marginBottom: '8px', fontSize: '32px', fontWeight: 700, letterSpacing: '-0.5px' }}>
+            Create Account
+          </Title>
+          <Text style={{ color: '#64748B', fontSize: '15px', lineHeight: '1.6' }}>
+            Join ShareList and share music everywhere
+          </Text>
+        </Flex>
+
+        {/* Form */}
+        <Form form={form} layout="vertical" onFinish={handleFinish} requiredMark={false}>
+          <Form.Item
+            name="email"
+            rules={[{ required: true, message: 'Please enter your email' }, { type: 'email', message: 'Please enter a valid email' }]}
+            style={{ marginBottom: '20px' }}
+          >
+            <Input
+              prefix={<MailOutlined style={{ color: '#64748B', fontSize: '16px' }} />}
+              placeholder="Email address"
+              size="large"
+              style={{ background: 'rgba(28, 31, 33, 0.6)', border: '1px solid #2A2D30', borderRadius: '12px', padding: '12px 16px', color: '#F1F5F9', fontSize: '15px' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: 'Please enter a password' }, { min: 6, message: 'Password must be at least 6 characters' }]}
+            style={{ marginBottom: '20px' }}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: '#64748B', fontSize: '16px' }} />}
+              placeholder="Password (min. 6 characters)"
+              size="large"
+              style={{ background: 'rgba(28, 31, 33, 0.6)', border: '1px solid #2A2D30', borderRadius: '12px', padding: '12px 16px', color: '#F1F5F9', fontSize: '15px' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="confirmPassword"
+            dependencies={['password']}
+            rules={[
+              { required: true, message: 'Please confirm your password' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) return Promise.resolve()
+                  return Promise.reject(new Error('Passwords do not match'))
+                },
+              }),
+            ]}
+            style={{ marginBottom: '24px' }}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: '#64748B', fontSize: '16px' }} />}
+              placeholder="Confirm password"
+              size="large"
+              style={{ background: 'rgba(28, 31, 33, 0.6)', border: '1px solid #2A2D30', borderRadius: '12px', padding: '12px 16px', color: '#F1F5F9', fontSize: '15px' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="agreement"
+            valuePropName="checked"
+            rules={[{ validator: (_, value) => value ? Promise.resolve() : Promise.reject(new Error('You must accept the terms')) }]}
+            style={{ marginBottom: '28px' }}
+          >
+            <Checkbox style={{ color: '#94A3B8', fontSize: '13px' }}>
+              <span style={{ color: '#94A3B8' }}>
+                I agree to ShareList's{' '}
+                <a href="#" style={{ color: '#4ADE80', textDecoration: 'none', fontWeight: 600 }}>Terms of Service</a>
+                {' '}and{' '}
+                <a href="#" style={{ color: '#4ADE80', textDecoration: 'none', fontWeight: 600 }}>Privacy Policy</a>
+              </span>
+            </Checkbox>
+          </Form.Item>
+
+          {error && (
+            <Form.Item style={{ marginBottom: '16px' }}>
+              <Alert message={error} type="error" showIcon style={{ borderRadius: '10px' }} />
+            </Form.Item>
+          )}
+
+          <Form.Item style={{ marginBottom: '20px' }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              block
+              loading={loading}
+              style={{
+                background: 'linear-gradient(135deg, #4ADE80 0%, #38BDF8 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                height: '52px',
+                fontSize: '16px',
+                fontWeight: 600,
+                color: '#FFFFFF',
+                boxShadow: '0 8px 24px rgba(74, 222, 128, 0.3)',
+                transition: 'all 0.3s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 12px 32px rgba(74, 222, 128, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(74, 222, 128, 0.3)'
+              }}
             >
-              <Input placeholder="you@example.com" size="large" style={{ borderRadius: 12 }} />
-            </Form.Item>
+              <span style={{ color: '#FFFFFF' }}>Create Account</span>
+            </Button>
+          </Form.Item>
+        </Form>
 
-            <Form.Item
-              name="password"
-              label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Password</span>}
-              rules={[{ required: true, min: 6, message: 'Minimum 6 characters' }]}
-            >
-              <Input.Password placeholder="Min 6 characters" size="large" style={{ borderRadius: 12 }} />
-            </Form.Item>
-
-            {error && (
-              <Form.Item>
-                <Alert message={error} type="error" showIcon style={{ borderRadius: 10 }} />
-              </Form.Item>
-            )}
-
-            <Form.Item style={{ marginBottom: 0 }}>
-              <Button
-                type="primary"
-                htmlType="submit"
-                size="large"
-                loading={loading}
-                block
-                style={{ borderRadius: 12, fontWeight: 600 }}
-              >
-                Create account
-              </Button>
-            </Form.Item>
-          </Form>
-        )}
-
-        <div style={{ marginTop: 24 }}>
-          <Link to="/signin" style={{ color: SL.muted, fontSize: 14, textDecoration: 'none' }}>
+        {/* Back to sign in */}
+        <Flex justify="center" align="center" style={{ marginTop: '24px' }}>
+          <Text style={{ color: '#64748B', fontSize: '14px' }}>
             Already have an account?{' '}
-            <span style={{ color: SL.accent }}>Sign in</span>
-          </Link>
-        </div>
-      </div>
-    </Flex>
+            <Link
+              onClick={() => navigate('/signin')}
+              style={{ color: '#4ADE80', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              Sign In
+            </Link>
+          </Text>
+        </Flex>
+      </Card>
+    </div>
   )
 }

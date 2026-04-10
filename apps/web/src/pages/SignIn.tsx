@@ -1,19 +1,16 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Button, Flex, Form, Input, Typography, Alert } from 'antd'
+import { useNavigate } from 'react-router-dom'
+import { Button, Card, Flex, Form, Input, Typography, Alert } from 'antd'
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'
+import { Music2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
-const SL = {
-  surface: '#1C1F21',
-  border: '#2A2D30',
-  accent: '#38BDF8',
-  text: '#F1F5F9',
-  muted: '#64748B',
-}
+const { Title, Text, Link } = Typography
 
 export function SignIn() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const [form] = Form.useForm()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -23,76 +20,191 @@ export function SignIn() {
     const err = await signIn(values.email, values.password)
     setLoading(false)
     if (err) { setError(err); return }
-    navigate('/profile')
+    navigate('/')
   }
 
   return (
-    <Flex justify="center" align="center" style={{ minHeight: 'calc(100vh - 57px)', padding: 16 }}>
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 448,
-          backgroundColor: SL.surface,
-          border: `1px solid ${SL.border}`,
-          borderRadius: 20,
-          padding: 32,
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-        }}
-      >
-        <Typography.Title level={3} style={{ color: SL.text, marginBottom: 4, marginTop: 0 }}>
-          Welcome back
-        </Typography.Title>
-        <Typography.Text style={{ color: SL.muted, fontSize: 14, display: 'block', marginBottom: 32 }}>
-          Sign in to your ShareList account
-        </Typography.Text>
+    <div style={{
+      minHeight: '100vh',
+      background: '#111314',
+      position: 'relative',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+    }}>
+      {/* Background gradient */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        background: 'radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.12) 0%, rgba(74, 222, 128, 0.08) 40%, transparent 70%)',
+      }} />
 
-        <Form layout="vertical" onFinish={handleFinish} requiredMark={false}>
+      <Card
+        style={{
+          maxWidth: '440px',
+          width: '100%',
+          borderRadius: '24px',
+          background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(28, 31, 33, 0.95) 50%, rgba(28, 31, 33, 0.98) 100%)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(56, 189, 248, 0.15)',
+          position: 'relative',
+          zIndex: 1,
+        }}
+        styles={{ body: { padding: '48px 40px' } }}
+      >
+        {/* Logo */}
+        <Flex justify="center" style={{ marginBottom: '20px' }}>
+          <Flex align="center" gap={12}>
+            <div style={{ position: 'relative', width: '36px', height: '36px' }}>
+              <Music2 style={{ width: '30px', height: '30px', color: '#38BDF8', position: 'absolute', top: 1, left: 1, strokeWidth: 2.5 }} />
+              <Music2 style={{ width: '30px', height: '30px', color: '#38BDF8', position: 'absolute', top: 3, left: 3, opacity: 0.5, strokeWidth: 2.5 }} />
+            </div>
+            <div style={{ fontSize: '28px', lineHeight: 1 }}>
+              <span style={{ fontWeight: 300, color: 'white' }}>Share</span>
+              <span style={{ fontWeight: 700, color: '#38BDF8' }}>List</span>
+            </div>
+          </Flex>
+        </Flex>
+
+        {/* Heading */}
+        <Flex vertical align="center" style={{ marginBottom: '40px', textAlign: 'center' }}>
+          <Title level={2} style={{ color: '#F1F5F9', marginBottom: '8px', fontSize: '32px', fontWeight: 700, letterSpacing: '-0.5px' }}>
+            Welcome Back
+          </Title>
+          <Text style={{ color: '#64748B', fontSize: '15px', lineHeight: '1.6' }}>
+            Share your music across all platforms
+          </Text>
+        </Flex>
+
+        {/* Form */}
+        <Form form={form} layout="vertical" onFinish={handleFinish} requiredMark={false}>
           <Form.Item
             name="email"
-            label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Email</span>}
-            rules={[{ required: true, type: 'email' }]}
+            rules={[{ required: true, message: 'Please enter your email' }, { type: 'email', message: 'Please enter a valid email' }]}
+            style={{ marginBottom: '20px' }}
           >
-            <Input placeholder="you@example.com" size="large" style={{ borderRadius: 12 }} />
+            <Input
+              prefix={<UserOutlined style={{ color: '#64748B', fontSize: '16px' }} />}
+              placeholder="Email address"
+              size="large"
+              style={{ background: 'rgba(28, 31, 33, 0.6)', border: '1px solid #2A2D30', borderRadius: '12px', padding: '12px 16px', color: '#F1F5F9', fontSize: '15px' }}
+            />
           </Form.Item>
 
           <Form.Item
             name="password"
-            label={<span style={{ color: SL.text, fontSize: 14, fontWeight: 500 }}>Password</span>}
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: 'Please enter your password' }]}
+            style={{ marginBottom: '12px' }}
           >
-            <Input.Password placeholder="••••••••" size="large" style={{ borderRadius: 12 }} />
+            <Input.Password
+              prefix={<LockOutlined style={{ color: '#64748B', fontSize: '16px' }} />}
+              placeholder="Password"
+              size="large"
+              style={{ background: 'rgba(28, 31, 33, 0.6)', border: '1px solid #2A2D30', borderRadius: '12px', padding: '12px 16px', color: '#F1F5F9', fontSize: '15px' }}
+            />
           </Form.Item>
 
+          {/* Forgot password */}
+          <Flex justify="flex-end" style={{ marginBottom: '24px' }}>
+            <Link
+              onClick={() => navigate('/forgot-password')}
+              style={{ color: '#38BDF8', fontSize: '14px', fontWeight: 500 }}
+            >
+              Forgot password?
+            </Link>
+          </Flex>
+
           {error && (
-            <Form.Item>
-              <Alert message={error} type="error" showIcon style={{ borderRadius: 10 }} />
+            <Form.Item style={{ marginBottom: '16px' }}>
+              <Alert message={error} type="error" showIcon style={{ borderRadius: '10px' }} />
             </Form.Item>
           )}
 
-          <Form.Item style={{ marginBottom: 0 }}>
+          {/* Submit */}
+          <Form.Item style={{ marginBottom: '20px' }}>
             <Button
               type="primary"
               htmlType="submit"
               size="large"
-              loading={loading}
               block
-              style={{ borderRadius: 12, fontWeight: 600 }}
+              loading={loading}
+              style={{
+                background: 'linear-gradient(135deg, #38BDF8 0%, #4ADE80 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                height: '52px',
+                fontSize: '16px',
+                fontWeight: 600,
+                color: '#FFFFFF',
+                boxShadow: '0 8px 24px rgba(56, 189, 248, 0.3)',
+                transition: 'all 0.3s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 12px 32px rgba(56, 189, 248, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(56, 189, 248, 0.3)'
+              }}
             >
-              Sign in
+              <span style={{ color: '#FFFFFF' }}>Sign In</span>
             </Button>
           </Form.Item>
         </Form>
 
-        <Flex vertical gap={8} style={{ marginTop: 24 }}>
-          <Link to="/signup" style={{ color: SL.muted, fontSize: 14, textDecoration: 'none' }}>
-            No account?{' '}
-            <span style={{ color: SL.accent }}>Sign up</span>
-          </Link>
-          <Link to="/forgot-password" style={{ color: SL.muted, fontSize: 14, textDecoration: 'none' }}>
-            Forgot password?
-          </Link>
+        {/* Divider */}
+        <Flex justify="center" align="center" style={{ margin: '24px 0', position: 'relative' }}>
+          <div style={{ position: 'absolute', width: '100%', height: '1px', background: '#2A2D30' }} />
+          <Text style={{ background: 'transparent', padding: '0 16px', color: '#64748B', fontSize: '13px', position: 'relative', zIndex: 1 }}>
+            or
+          </Text>
         </Flex>
-      </div>
-    </Flex>
+
+        {/* Register button */}
+        <Button
+          icon={<MailOutlined />}
+          size="large"
+          block
+          style={{
+            background: 'transparent',
+            border: '1px solid #2A2D30',
+            borderRadius: '12px',
+            height: '52px',
+            fontSize: '15px',
+            fontWeight: 600,
+            color: '#F1F5F9',
+            transition: 'all 0.3s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#38BDF8'
+            e.currentTarget.style.background = 'rgba(56, 189, 248, 0.05)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#2A2D30'
+            e.currentTarget.style.background = 'transparent'
+          }}
+          onClick={() => navigate('/signup')}
+        >
+          Create New Account
+        </Button>
+
+        {/* Footer */}
+        <Flex justify="center" style={{ marginTop: '32px' }}>
+          <div style={{ color: '#64748B', fontSize: '13px', textAlign: 'center', lineHeight: '1.6' }}>
+            By continuing, you agree to ShareList's{' '}
+            <a href="#" style={{ color: '#38BDF8', textDecoration: 'none' }}>Terms of Service</a>
+            {' '}and{' '}
+            <a href="#" style={{ color: '#38BDF8', textDecoration: 'none' }}>Privacy Policy</a>
+          </div>
+        </Flex>
+      </Card>
+    </div>
   )
 }
