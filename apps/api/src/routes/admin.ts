@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import type { Request, Response } from 'express'
+import type { Request, Response, NextFunction } from 'express'
 import type { ApiResult, ApiError } from '@sharelist/shared'
 import { supabaseAdmin } from '../lib/supabase'
-import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth'
+import { requireAuth, requirePermission } from '../middleware/auth'
 
 const router = Router()
 
@@ -11,6 +11,28 @@ router.use(requireAuth)
 
 function log(level: string, message: string, ctx: Record<string, unknown> = {}): void {
   console.log(JSON.stringify({ level, message, ...ctx }))
+}
+
+// Allows through if the caller is an admin OR if they hold account:selfmanage and are targeting themselves.
+function requireAdminOrSelfManage(req: Request, res: Response, next: NextFunction): void {
+  const id = req.params['id'] as string
+  const isSelf = req.user!.id === id
+  const hasSelfManage = req.user!.permissions.includes('account:selfmanage')
+  if (req.user!.role === 'admin' || (isSelf && hasSelfManage)) { next(); return }
+  const err: ApiError = { data: null, error: { message: 'Forbidden' } }
+  res.status(403).json(err)
+}
+
+// Allows through if the caller holds the named permission OR holds account:selfmanage and is targeting themselves.
+function requirePermissionOrSelfManage(permission: string) {
+  return function (req: Request, res: Response, next: NextFunction): void {
+    const id = req.params['id'] as string
+    const isSelf = req.user!.id === id
+    const hasSelfManage = req.user!.permissions.includes('account:selfmanage')
+    if (req.user!.permissions.includes(permission) || (isSelf && hasSelfManage)) { next(); return }
+    const err: ApiError = { data: null, error: { message: `Missing required permission: ${permission}` } }
+    res.status(403).json(err)
+  }
 }
 
 // GET /admin/users — list all users with their profiles and permissions
@@ -74,7 +96,7 @@ router.post('/', requirePermission('usermanage:add'), async (req: Request, res: 
 })
 
 // POST /admin/users/:id/password — reset a user's password
-router.post('/:id/password', requirePermission('usermanage:updatepassword'), async (req: Request, res: Response) => {
+router.post('/:id/password', requirePermissionOrSelfManage('usermanage:updatepassword'), async (req: Request, res: Response) => {
   const id = req.params['id'] as string
   const { password } = req.body as { password?: string }
   if (!password || password.length < 6) {
@@ -95,8 +117,8 @@ router.post('/:id/password', requirePermission('usermanage:updatepassword'), asy
   res.json(result)
 })
 
-// POST /admin/users/:id/verify — mark user's email as verified (admin role)
-router.post('/:id/verify', requireAdmin, async (req: Request, res: Response) => {
+// POST /admin/users/:id/verify — mark user's email as verified
+router.post('/:id/verify', requireAdminOrSelfManage, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
   const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { email_confirm: true })
@@ -112,8 +134,8 @@ router.post('/:id/verify', requireAdmin, async (req: Request, res: Response) => 
   res.json(result)
 })
 
-// POST /admin/users/:id/resend-verification — resend confirmation email (admin role)
-router.post('/:id/resend-verification', requireAdmin, async (req: Request, res: Response) => {
+// POST /admin/users/:id/resend-verification — resend confirmation email
+router.post('/:id/resend-verification', requireAdminOrSelfManage, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
   const { data: { user }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(id)
@@ -142,10 +164,10 @@ router.post('/:id/resend-verification', requireAdmin, async (req: Request, res: 
   res.json(result)
 })
 
-// POST /admin/users/:id/unverify — clear email confirmation (admin role)
+// POST /admin/users/:id/unverify — clear email confirmation
 // updateUserById({ email_confirm: false }) is a no-op in Supabase — must use
 // a security-definer SQL function to set email_confirmed_at = null directly.
-router.post('/:id/unverify', requireAdmin, async (req: Request, res: Response) => {
+router.post('/:id/unverify', requireAdminOrSelfManage, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
   const { error } = await supabaseAdmin.rpc('admin_unverify_user', { p_user_id: id })
@@ -161,8 +183,8 @@ router.post('/:id/unverify', requireAdmin, async (req: Request, res: Response) =
   res.json(result)
 })
 
-// POST /admin/users/:id/magic-link — send a magic login link to the user's email (admin role)
-router.post('/:id/magic-link', requireAdmin, async (req: Request, res: Response) => {
+// POST /admin/users/:id/magic-link — send a magic login link to the user's email
+router.post('/:id/magic-link', requireAdminOrSelfManage, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
   const { data: { user }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(id)
@@ -188,8 +210,8 @@ router.post('/:id/magic-link', requireAdmin, async (req: Request, res: Response)
   res.json(result)
 })
 
-// PATCH /admin/users/:id — update display_name and/or avatar_url for any user (admin role)
-router.patch('/:id', requireAdmin, async (req: Request, res: Response) => {
+// PATCH /admin/users/:id — update display_name and/or avatar_url for any user
+router.patch('/:id', requireAdminOrSelfManage, async (req: Request, res: Response) => {
   const id = req.params['id'] as string
   const body = req.body as Record<string, unknown>
   const updates: { display_name?: string; avatar_url?: string } = {}
@@ -229,7 +251,7 @@ router.patch('/:id', requireAdmin, async (req: Request, res: Response) => {
 })
 
 // PATCH /admin/users/:id/suspend
-router.patch('/:id/suspend', requirePermission('usermanage:suspend'), async (req: Request, res: Response) => {
+router.patch('/:id/suspend', requirePermissionOrSelfManage('usermanage:suspend'), async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
   const { error: profileError } = await supabaseAdmin
@@ -255,7 +277,7 @@ router.patch('/:id/suspend', requirePermission('usermanage:suspend'), async (req
 })
 
 // PATCH /admin/users/:id/unsuspend
-router.patch('/:id/unsuspend', requirePermission('usermanage:suspend'), async (req: Request, res: Response) => {
+router.patch('/:id/unsuspend', requirePermissionOrSelfManage('usermanage:suspend'), async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
   const { error: profileError } = await supabaseAdmin
@@ -281,7 +303,7 @@ router.patch('/:id/unsuspend', requirePermission('usermanage:suspend'), async (r
 })
 
 // PUT /admin/users/:id/permissions — assign the full permissions array for a user
-router.put('/:id/permissions', requirePermission('usermanage:editpermissions'), async (req: Request, res: Response) => {
+router.put('/:id/permissions', requirePermissionOrSelfManage('usermanage:editpermissions'), async (req: Request, res: Response) => {
   const id = req.params['id'] as string
   const { permissions } = req.body as { permissions?: unknown }
 
@@ -290,7 +312,7 @@ router.put('/:id/permissions', requirePermission('usermanage:editpermissions'), 
     return
   }
 
-  const valid = ['usermanage:add', 'usermanage:suspend', 'usermanage:updatepassword', 'usermanage:listusers', 'usermanage:deleteusers', 'usermanage:editpermissions']
+  const valid = ['usermanage:add', 'usermanage:suspend', 'usermanage:updatepassword', 'usermanage:listusers', 'usermanage:deleteusers', 'usermanage:editpermissions', 'account:selfmanage']
   const invalid = (permissions as string[]).filter(p => !valid.includes(p))
   if (invalid.length > 0) {
     res.status(400).json({ data: null, error: { message: `Unknown permissions: ${invalid.join(', ')}` } })
@@ -314,7 +336,7 @@ router.put('/:id/permissions', requirePermission('usermanage:editpermissions'), 
 })
 
 // DELETE /admin/users/:id — hard delete; requires usermanage:deleteusers permission
-router.delete('/:id', requirePermission('usermanage:deleteusers'), async (req: Request, res: Response) => {
+router.delete('/:id', requirePermissionOrSelfManage('usermanage:deleteusers'), async (req: Request, res: Response) => {
   const id = req.params['id'] as string
 
   const { error } = await supabaseAdmin.auth.admin.deleteUser(id)
