@@ -132,6 +132,11 @@ export function AdminUsers() {
 
   const closeManage = () => setTarget(null)
 
+  const patchTarget = (patch: Partial<AdminUser>) => {
+    setTarget(prev => prev ? { ...prev, ...patch } : prev)
+    setUsers(prev => prev.map(u => u.id === patch.id ? { ...u, ...patch } : u))
+  }
+
   const reloadAndSync = async (id: string) => {
     const result = await api.listAdminUsers()
     if (api.isError(result)) return
@@ -163,10 +168,12 @@ export function AdminUsers() {
   const handleSuspendToggle = async () => {
     if (!target) return
     setSuspendLoading(true)
-    const fn = target.status === 'suspended' ? api.unsuspendUser : api.suspendUser
+    const isSuspended = target.status === 'suspended'
+    const fn = isSuspended ? api.unsuspendUser : api.suspendUser
     const result = await fn(target.id)
     setSuspendLoading(false)
     if (api.isError(result)) return
+    patchTarget({ id: target.id, status: isSuspended ? 'active' : 'suspended' })
     await reloadAndSync(target.id)
   }
 
@@ -176,6 +183,7 @@ export function AdminUsers() {
     const result = await api.verifyUser(target.id)
     setVerifyLoading(false)
     if (api.isError(result)) return
+    patchTarget({ id: target.id, emailConfirmed: true })
     await reloadAndSync(target.id)
   }
 
@@ -185,6 +193,7 @@ export function AdminUsers() {
     const result = await api.unverifyUser(target.id)
     setUnverifyLoading(false)
     if (api.isError(result)) return
+    patchTarget({ id: target.id, emailConfirmed: false })
     await reloadAndSync(target.id)
   }
 
