@@ -21,27 +21,45 @@ export function SignIn() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-6">
-      <h1 className="text-2xl font-bold mb-6">Sign in</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="email" placeholder="Email" value={email} required
-          onChange={e => setEmail(e.target.value)}
-          className="border rounded px-3 py-2 w-full"
-        />
-        <input
-          type="password" placeholder="Password" value={password} required
-          onChange={e => setPassword(e.target.value)}
-          className="border rounded px-3 py-2 w-full"
-        />
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        <button type="submit" disabled={loading} className="bg-gray-900 text-white py-2 rounded hover:bg-gray-700 disabled:opacity-50">
-          {loading ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-      <div className="mt-4 text-sm text-gray-600 flex flex-col gap-1">
-        <Link to="/signup" className="hover:underline">No account? Sign up</Link>
-        <Link to="/forgot-password" className="hover:underline">Forgot password?</Link>
+    <div className="min-h-[calc(100vh-57px)] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-sl-surface border border-sl-border rounded-[20px] p-8 shadow-2xl">
+        <h1 className="text-2xl font-bold text-sl-text mb-1">Welcome back</h1>
+        <p className="text-sm text-sl-muted mb-8">Sign in to your ShareList account</p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-sm font-medium text-sl-text mb-1.5">Email</label>
+            <input
+              type="email" placeholder="you@example.com" value={email} required
+              onChange={e => setEmail(e.target.value)}
+              className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-sl-text mb-1.5">Password</label>
+            <input
+              type="password" placeholder="••••••••" value={password} required
+              onChange={e => setPassword(e.target.value)}
+              className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors"
+            />
+          </div>
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+          <button
+            type="submit" disabled={loading}
+            className="bg-sl-accent text-sl-bg py-2.5 rounded-xl text-sm font-semibold hover:bg-sl-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors mt-1"
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+
+        <div className="mt-6 flex flex-col gap-2 text-sm">
+          <Link to="/signup" className="text-sl-muted hover:text-sl-accent transition-colors">
+            No account? <span className="text-sl-accent">Sign up</span>
+          </Link>
+          <Link to="/forgot-password" className="text-sl-muted hover:text-sl-accent transition-colors">
+            Forgot password?
+          </Link>
+        </div>
       </div>
     </div>
   )

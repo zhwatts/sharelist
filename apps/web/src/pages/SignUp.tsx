@@ -18,38 +18,52 @@ export function SignUp() {
     const err = await signUp(email, password)
     setLoading(false)
     if (err) { setError(err); return }
-    // If Supabase requires email confirmation there's no session yet — show message
-    // If session was created immediately, signUp already set user and we can redirect
     setSuccess(true)
     setTimeout(() => navigate('/profile'), 1000)
   }
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-6">
-      <h1 className="text-2xl font-bold mb-6">Create account</h1>
-      {success ? (
-        <p className="text-green-600">Account created! Redirecting…</p>
-      ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="email" placeholder="Email" value={email} required
-            onChange={e => setEmail(e.target.value)}
-            className="border rounded px-3 py-2 w-full"
-          />
-          <input
-            type="password" placeholder="Password (min 6 chars)" value={password} required minLength={6}
-            onChange={e => setPassword(e.target.value)}
-            className="border rounded px-3 py-2 w-full"
-          />
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          <button type="submit" disabled={loading} className="bg-gray-900 text-white py-2 rounded hover:bg-gray-700 disabled:opacity-50">
-            {loading ? 'Creating account…' : 'Create account'}
-          </button>
-        </form>
-      )}
-      <p className="mt-4 text-sm text-gray-600">
-        <Link to="/signin" className="hover:underline">Already have an account? Sign in</Link>
-      </p>
+    <div className="min-h-[calc(100vh-57px)] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-sl-surface border border-sl-border rounded-[20px] p-8 shadow-2xl">
+        <h1 className="text-2xl font-bold text-sl-text mb-1">Create account</h1>
+        <p className="text-sm text-sl-muted mb-8">Join ShareList and start sharing playlists</p>
+
+        {success ? (
+          <p className="text-sl-mint text-sm font-medium">Account created! Redirecting…</p>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <label className="block text-sm font-medium text-sl-text mb-1.5">Email</label>
+              <input
+                type="email" placeholder="you@example.com" value={email} required
+                onChange={e => setEmail(e.target.value)}
+                className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-sl-text mb-1.5">Password</label>
+              <input
+                type="password" placeholder="Min 6 characters" value={password} required minLength={6}
+                onChange={e => setPassword(e.target.value)}
+                className="bg-sl-bg border border-sl-border rounded-xl px-4 py-2.5 text-sm text-sl-text placeholder:text-sl-muted w-full focus:outline-none focus:ring-2 focus:ring-sl-accent/50 focus:border-sl-accent/50 transition-colors"
+              />
+            </div>
+            {error && <p className="text-red-400 text-sm">{error}</p>}
+            <button
+              type="submit" disabled={loading}
+              className="bg-sl-accent text-sl-bg py-2.5 rounded-xl text-sm font-semibold hover:bg-sl-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors mt-1"
+            >
+              {loading ? 'Creating account…' : 'Create account'}
+            </button>
+          </form>
+        )}
+
+        <p className="mt-6 text-sm">
+          <Link to="/signin" className="text-sl-muted hover:text-sl-accent transition-colors">
+            Already have an account? <span className="text-sl-accent">Sign in</span>
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }
