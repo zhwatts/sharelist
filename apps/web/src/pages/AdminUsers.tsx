@@ -60,6 +60,8 @@ export function AdminUsers() {
   const canResetPassword = me?.permissions.includes('usermanage:updatepassword') ?? false
   const isAdmin = me?.role === 'admin'
   const isSelf = target?.id === me?.id
+  // readOnly: can view the modal but has no write permissions
+  const readOnly = !isAdmin && !canSuspend && !canResetPassword
 
   const load = async () => {
     const result = await api.listAdminUsers()
@@ -341,70 +343,72 @@ export function AdminUsers() {
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Display name</label>
                       <input
                         type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
-                        placeholder="Display name"
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        placeholder="Display name" disabled={readOnly}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Avatar URL</label>
                       <input
                         type="url" value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)}
-                        placeholder="https://…"
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        placeholder="https://…" disabled={readOnly}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
                   {profileError && <p className="text-red-600 text-sm">{profileError}</p>}
-                  <div className="flex items-center gap-3">
-                    <button type="submit" disabled={profileLoading}
-                      className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50">
-                      {profileLoading ? 'Saving…' : 'Save changes'}
-                    </button>
-                    {profileSuccess && <span className="text-sm text-green-600 font-medium">✓ Saved</span>}
-                  </div>
+                  {!readOnly && (
+                    <div className="flex items-center gap-3">
+                      <button type="submit" disabled={profileLoading}
+                        className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50">
+                        {profileLoading ? 'Saving…' : 'Save changes'}
+                      </button>
+                      {profileSuccess && <span className="text-sm text-green-600 font-medium">✓ Saved</span>}
+                    </div>
+                  )}
                 </form>
               </section>
 
               {/* Authentication */}
-              {isAdmin && (
-                <section className="px-6 py-5 border-b">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Authentication</p>
-                  <div className="space-y-5">
+              <section className="px-6 py-5 border-b">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Authentication</p>
+                <div className="space-y-5">
 
-                    {/* Email verification row */}
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-800">Email verification</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{target.email}</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          target.emailConfirmed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {target.emailConfirmed ? '✓ Verified' : 'Unverified'}
-                        </span>
-                        {target.emailConfirmed ? (
-                          <button onClick={handleUnverify} disabled={unverifyLoading}
-                            className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 font-medium">
-                            {unverifyLoading ? '…' : 'Revoke'}
-                          </button>
-                        ) : (
-                          <>
-                            <button onClick={handleVerify} disabled={verifyLoading}
-                              className="text-xs px-3 py-1.5 rounded-lg border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-50 font-medium">
-                              {verifyLoading ? '…' : 'Mark verified'}
-                            </button>
-                            <button onClick={handleResendVerification} disabled={resendLoading}
-                              className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 font-medium">
-                              {resendLoading ? '…' : 'Resend email'}
-                            </button>
-                            {resendSuccess && <span className="text-xs text-green-600 font-medium">✓ Sent</span>}
-                          </>
-                        )}
-                      </div>
+                  {/* Email verification row */}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800">Email verification</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{target.email}</p>
                     </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        target.emailConfirmed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {target.emailConfirmed ? '✓ Verified' : 'Unverified'}
+                      </span>
+                      {!readOnly && (target.emailConfirmed ? (
+                        <button onClick={handleUnverify} disabled={unverifyLoading}
+                          className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 font-medium">
+                          {unverifyLoading ? '…' : 'Revoke'}
+                        </button>
+                      ) : (
+                        <>
+                          <button onClick={handleVerify} disabled={verifyLoading}
+                            className="text-xs px-3 py-1.5 rounded-lg border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-50 font-medium">
+                            {verifyLoading ? '…' : 'Mark verified'}
+                          </button>
+                          <button onClick={handleResendVerification} disabled={resendLoading}
+                            className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 font-medium">
+                            {resendLoading ? '…' : 'Resend email'}
+                          </button>
+                          {resendSuccess && <span className="text-xs text-green-600 font-medium">✓ Sent</span>}
+                        </>
+                      ))}
+                    </div>
+                  </div>
 
-                    {/* Magic link row */}
+                  {/* Magic link row — only shown to admins who can act */}
+                  {!readOnly && (
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-sm font-medium text-gray-800">Magic login link</p>
@@ -418,13 +422,13 @@ export function AdminUsers() {
                         {magicLinkSuccess && <span className="text-xs text-green-600 font-medium">✓ Sent</span>}
                       </div>
                     </div>
+                  )}
 
-                  </div>
-                </section>
-              )}
+                </div>
+              </section>
 
               {/* Account access */}
-              {canSuspend && !isSelf && (
+              {!isSelf && (
                 <section className="px-6 py-5 border-b">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Account access</p>
                   <div className="flex items-center justify-between gap-4">
@@ -436,14 +440,16 @@ export function AdminUsers() {
                           : 'This user can sign in normally'}
                       </p>
                     </div>
-                    <button onClick={handleSuspendToggle} disabled={suspendLoading}
-                      className={`shrink-0 text-xs px-4 py-2 rounded-lg border font-medium disabled:opacity-50 transition-colors ${
-                        target.status === 'suspended'
-                          ? 'border-green-300 text-green-700 hover:bg-green-50'
-                          : 'border-red-300 text-red-600 hover:bg-red-50'
-                      }`}>
-                      {suspendLoading ? '…' : target.status === 'suspended' ? 'Restore access' : 'Suspend access'}
-                    </button>
+                    {!readOnly && canSuspend && (
+                      <button onClick={handleSuspendToggle} disabled={suspendLoading}
+                        className={`shrink-0 text-xs px-4 py-2 rounded-lg border font-medium disabled:opacity-50 transition-colors ${
+                          target.status === 'suspended'
+                            ? 'border-green-300 text-green-700 hover:bg-green-50'
+                            : 'border-red-300 text-red-600 hover:bg-red-50'
+                        }`}>
+                        {suspendLoading ? '…' : target.status === 'suspended' ? 'Restore access' : 'Suspend access'}
+                      </button>
+                    )}
                   </div>
                 </section>
               )}
@@ -475,7 +481,7 @@ export function AdminUsers() {
               )}
 
               {/* Permissions */}
-              {isAdmin && !isSelf && (
+              {!isSelf && (
                 <section className="px-6 py-5 border-b">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Permissions</p>
                   <form onSubmit={handlePermSave} className="space-y-1">
@@ -487,10 +493,11 @@ export function AdminUsers() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setPermSelection(prev =>
+                          disabled={readOnly}
+                          onClick={() => !readOnly && setPermSelection(prev =>
                             prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key]
                           )}
-                          className={`relative inline-flex h-6 w-11 shrink-0 ml-6 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 ${
+                          className={`relative inline-flex h-6 w-11 shrink-0 ml-6 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 disabled:cursor-not-allowed disabled:opacity-60 ${
                             permSelection.includes(key) ? 'bg-gray-900' : 'bg-gray-200'
                           }`}
                         >
@@ -501,13 +508,15 @@ export function AdminUsers() {
                       </div>
                     ))}
                     {permError && <p className="text-red-600 text-sm pt-2">{permError}</p>}
-                    <div className="flex items-center gap-3 pt-3">
-                      <button type="submit" disabled={permLoading}
-                        className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50">
-                        {permLoading ? 'Saving…' : 'Save permissions'}
-                      </button>
-                      {permSuccess && <span className="text-sm text-green-600 font-medium">✓ Saved</span>}
-                    </div>
+                    {!readOnly && (
+                      <div className="flex items-center gap-3 pt-3">
+                        <button type="submit" disabled={permLoading}
+                          className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50">
+                          {permLoading ? 'Saving…' : 'Save permissions'}
+                        </button>
+                        {permSuccess && <span className="text-sm text-green-600 font-medium">✓ Saved</span>}
+                      </div>
+                    )}
                   </form>
                 </section>
               )}
