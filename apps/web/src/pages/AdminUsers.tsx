@@ -22,29 +22,37 @@ export function AdminUsers() {
   const [addError, setAddError] = useState<string | null>(null)
   const [addLoading, setAddLoading] = useState(false)
 
-  // Reset password modal
-  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null)
-  const [resetPassword, setResetPassword] = useState('')
-  const [resetError, setResetError] = useState<string | null>(null)
-  const [resetLoading, setResetLoading] = useState(false)
+  // Unified manage modal
+  const [target, setTarget] = useState<AdminUser | null>(null)
 
-  // Edit user modal
-  const [editTarget, setEditTarget] = useState<AdminUser | null>(null)
-  const [editDisplayName, setEditDisplayName] = useState('')
-  const [editAvatarUrl, setEditAvatarUrl] = useState('')
-  const [editError, setEditError] = useState<string | null>(null)
-  const [editLoading, setEditLoading] = useState(false)
+  // Profile section
+  const [displayName, setDisplayName] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const [profileSuccess, setProfileSuccess] = useState(false)
 
-  // Permissions modal
-  const [permTarget, setPermTarget] = useState<AdminUser | null>(null)
+  // Password section
+  const [newPassword, setNewPassword] = useState('')
+  const [pwdLoading, setPwdLoading] = useState(false)
+  const [pwdError, setPwdError] = useState<string | null>(null)
+  const [pwdSuccess, setPwdSuccess] = useState(false)
+
+  // Permissions section
   const [permSelection, setPermSelection] = useState<string[]>([])
-  const [permError, setPermError] = useState<string | null>(null)
   const [permLoading, setPermLoading] = useState(false)
+  const [permError, setPermError] = useState<string | null>(null)
+  const [permSuccess, setPermSuccess] = useState(false)
+
+  // Inline action loading
+  const [suspendLoading, setSuspendLoading] = useState(false)
+  const [verifyLoading, setVerifyLoading] = useState(false)
 
   const canAdd = me?.permissions.includes('usermanage:add') ?? false
   const canSuspend = me?.permissions.includes('usermanage:suspend') ?? false
   const canResetPassword = me?.permissions.includes('usermanage:updatepassword') ?? false
   const isAdmin = me?.role === 'admin'
+  const isSelf = target?.id === me?.id
 
   const load = async () => {
     const result = await api.listAdminUsers()
@@ -54,6 +62,31 @@ export function AdminUsers() {
 
   useEffect(() => { void load() }, [])
 
+  const openManage = (u: AdminUser) => {
+    setTarget(u)
+    setDisplayName(u.displayName ?? '')
+    setAvatarUrl(u.avatarUrl ?? '')
+    setPermSelection(u.permissions)
+    setNewPassword('')
+    setProfileError(null); setProfileSuccess(false)
+    setPwdError(null); setPwdSuccess(false)
+    setPermError(null); setPermSuccess(false)
+  }
+
+  const closeManage = () => setTarget(null)
+
+  // Reload and refresh modal state for the same user
+  const reloadAndSync = async (id: string) => {
+    const result = await api.listAdminUsers()
+    if (api.isError(result)) return
+    setUsers(result.data)
+    const updated = result.data.find(u => u.id === id)
+    if (updated) {
+      setTarget(updated)
+      setPermSelection(updated.permissions)
+    }
+  }
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     setAddError(null)
@@ -61,69 +94,64 @@ export function AdminUsers() {
     const result = await api.createAdminUser(addEmail, addPassword)
     setAddLoading(false)
     if (api.isError(result)) { setAddError(result.error.message); return }
-    setAddEmail('')
-    setAddPassword('')
+    setAddEmail(''); setAddPassword('')
     setShowAddForm(false)
     await load()
   }
 
-  const handleSuspend = async (u: AdminUser) => {
-    const fn = u.status === 'suspended' ? api.unsuspendUser : api.suspendUser
-    const result = await fn(u.id)
+  const handleProfileSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!target) return
+    setProfileError(null); setProfileSuccess(false)
+    setProfileLoading(true)
+    const result = await api.adminUpdateUser(target.id, { display_name: displayName, avatar_url: avatarUrl })
+    setProfileLoading(false)
+    if (api.isError(result)) { setProfileError(result.error.message); return }
+    setProfileSuccess(true)
+    await reloadAndSync(target.id)
+  }
+
+  const handleSuspendToggle = async () => {
+    if (!target) return
+    setSuspendLoading(true)
+    const fn = target.status === 'suspended' ? api.unsuspendUser : api.suspendUser
+    const result = await fn(target.id)
+    setSuspendLoading(false)
     if (api.isError(result)) { alert(result.error.message); return }
-    await load()
+    await reloadAndSync(target.id)
   }
 
-  const handleResetSubmit = async (e: React.FormEvent) => {
+  const handleVerify = async () => {
+    if (!target) return
+    setVerifyLoading(true)
+    const result = await api.verifyUser(target.id)
+    setVerifyLoading(false)
+    if (api.isError(result)) { alert(result.error.message); return }
+    await reloadAndSync(target.id)
+  }
+
+  const handlePasswordSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!resetTarget) return
-    setResetError(null)
-    setResetLoading(true)
-    const result = await api.adminResetPassword(resetTarget.id, resetPassword)
-    setResetLoading(false)
-    if (api.isError(result)) { setResetError(result.error.message); return }
-    setResetTarget(null)
-    setResetPassword('')
+    if (!target) return
+    setPwdError(null); setPwdSuccess(false)
+    setPwdLoading(true)
+    const result = await api.adminResetPassword(target.id, newPassword)
+    setPwdLoading(false)
+    if (api.isError(result)) { setPwdError(result.error.message); return }
+    setNewPassword('')
+    setPwdSuccess(true)
   }
 
-  const openEdit = (u: AdminUser) => {
-    setEditTarget(u)
-    setEditDisplayName(u.displayName ?? '')
-    setEditAvatarUrl(u.avatarUrl ?? '')
-    setEditError(null)
-  }
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
+  const handlePermSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editTarget) return
-    setEditError(null)
-    setEditLoading(true)
-    const result = await api.adminUpdateUser(editTarget.id, {
-      display_name: editDisplayName,
-      avatar_url: editAvatarUrl,
-    })
-    setEditLoading(false)
-    if (api.isError(result)) { setEditError(result.error.message); return }
-    setEditTarget(null)
-    await load()
-  }
-
-  const openPermissions = (u: AdminUser) => {
-    setPermTarget(u)
-    setPermSelection(u.permissions)
-    setPermError(null)
-  }
-
-  const handlePermSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!permTarget) return
-    setPermError(null)
+    if (!target) return
+    setPermError(null); setPermSuccess(false)
     setPermLoading(true)
-    const result = await api.updateUserPermissions(permTarget.id, permSelection)
+    const result = await api.updateUserPermissions(target.id, permSelection)
     setPermLoading(false)
     if (api.isError(result)) { setPermError(result.error.message); return }
-    setPermTarget(null)
-    await load()
+    setPermSuccess(true)
+    await reloadAndSync(target.id)
   }
 
   if (loadError) {
@@ -186,6 +214,9 @@ export function AdminUsers() {
                 <td className="px-4 py-3">
                   <div className="font-medium">{u.displayName ?? u.email}</div>
                   {u.displayName && <div className="text-gray-500 text-xs">{u.email}</div>}
+                  {!u.emailConfirmed && (
+                    <span className="text-xs text-amber-600 font-medium">unverified</span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
@@ -209,45 +240,13 @@ export function AdminUsers() {
                 <td className="px-4 py-3 text-gray-500 text-xs">
                   {new Date(u.createdAt).toLocaleDateString()}
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-2 justify-end">
-                    {canSuspend && u.id !== me?.id && (
-                      <button
-                        onClick={() => handleSuspend(u)}
-                        className={`text-xs px-2 py-1 rounded border ${
-                          u.status === 'suspended'
-                            ? 'border-green-300 text-green-700 hover:bg-green-50'
-                            : 'border-red-300 text-red-700 hover:bg-red-50'
-                        }`}
-                      >
-                        {u.status === 'suspended' ? 'Unsuspend' : 'Suspend'}
-                      </button>
-                    )}
-                    {canResetPassword && u.id !== me?.id && (
-                      <button
-                        onClick={() => { setResetTarget(u); setResetPassword(''); setResetError(null) }}
-                        className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
-                      >
-                        Reset pwd
-                      </button>
-                    )}
-                    {isAdmin && (
-                      <button
-                        onClick={() => openEdit(u)}
-                        className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {isAdmin && u.id !== me?.id && (
-                      <button
-                        onClick={() => openPermissions(u)}
-                        className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
-                      >
-                        Permissions
-                      </button>
-                    )}
-                  </div>
+                <td className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => openManage(u)}
+                    className="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Manage
+                  </button>
                 </td>
               </tr>
             ))}
@@ -260,116 +259,161 @@ export function AdminUsers() {
         </table>
       </div>
 
-      {/* Edit user modal */}
-      {editTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
-            <h2 className="font-semibold mb-1">Edit user</h2>
-            <p className="text-sm text-gray-500 mb-4">{editTarget.email}</p>
-            <form onSubmit={handleEditSubmit} className="flex flex-col gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Display name</label>
-                <input
-                  type="text" placeholder="Display name" value={editDisplayName}
-                  onChange={e => setEditDisplayName(e.target.value)}
-                  className="border rounded px-3 py-2 text-sm w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Avatar URL</label>
-                <input
-                  type="url" placeholder="https://…" value={editAvatarUrl}
-                  onChange={e => setEditAvatarUrl(e.target.value)}
-                  className="border rounded px-3 py-2 text-sm w-full"
-                />
-              </div>
-              {editError && <p className="text-red-600 text-sm">{editError}</p>}
-              <div className="flex gap-2">
-                <button
-                  type="submit" disabled={editLoading}
-                  className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm disabled:opacity-50"
-                >
-                  {editLoading ? 'Saving…' : 'Save'}
-                </button>
-                <button
-                  type="button" onClick={() => setEditTarget(null)}
-                  className="px-4 py-2 rounded border text-sm hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Unified manage modal */}
+      {target && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl shadow-xl flex flex-col max-h-[90vh]">
 
-      {/* Reset password modal */}
-      {resetTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
-            <h2 className="font-semibold mb-1">Reset password</h2>
-            <p className="text-sm text-gray-500 mb-4">{resetTarget.email}</p>
-            <form onSubmit={handleResetSubmit} className="flex flex-col gap-3">
-              <input
-                type="password" placeholder="New password (min 6 chars)" required minLength={6}
-                value={resetPassword} onChange={e => setResetPassword(e.target.value)}
-                className="border rounded px-3 py-2 text-sm"
-              />
-              {resetError && <p className="text-red-600 text-sm">{resetError}</p>}
-              <div className="flex gap-2">
-                <button
-                  type="submit" disabled={resetLoading}
-                  className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm disabled:opacity-50"
-                >
-                  {resetLoading ? 'Saving…' : 'Set password'}
-                </button>
-                <button
-                  type="button" onClick={() => setResetTarget(null)}
-                  className="px-4 py-2 rounded border text-sm hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
+            {/* Header */}
+            <div className="px-6 py-4 border-b flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Manage user</h2>
+                <p className="text-sm text-gray-500">{target.email}</p>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <button onClick={closeManage} className="text-gray-400 hover:text-gray-600 text-xl leading-none mt-0.5">×</button>
+            </div>
 
-      {/* Permissions modal */}
-      {permTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
-            <h2 className="font-semibold mb-1">Manage permissions</h2>
-            <p className="text-sm text-gray-500 mb-4">{permTarget.email}</p>
-            <form onSubmit={handlePermSubmit} className="flex flex-col gap-3">
-              {ALL_PERMISSIONS.map(p => (
-                <label key={p} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={permSelection.includes(p)}
-                    onChange={e => setPermSelection(prev =>
-                      e.target.checked ? [...prev, p] : prev.filter(x => x !== p)
-                    )}
-                  />
-                  <span className="font-mono text-xs">{p}</span>
-                </label>
-              ))}
-              {permError && <p className="text-red-600 text-sm">{permError}</p>}
-              <div className="flex gap-2 mt-1">
-                <button
-                  type="submit" disabled={permLoading}
-                  className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm disabled:opacity-50"
-                >
-                  {permLoading ? 'Saving…' : 'Save'}
-                </button>
-                <button
-                  type="button" onClick={() => setPermTarget(null)}
-                  className="px-4 py-2 rounded border text-sm hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+            {/* Scrollable body */}
+            <div className="overflow-y-auto flex-1 divide-y">
+
+              {/* Profile */}
+              <section className="px-6 py-5">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Profile</h3>
+                <form onSubmit={handleProfileSave} className="flex flex-col gap-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Display name</label>
+                      <input
+                        type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
+                        placeholder="Display name"
+                        className="border rounded px-3 py-2 text-sm w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Avatar URL</label>
+                      <input
+                        type="url" value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)}
+                        placeholder="https://…"
+                        className="border rounded px-3 py-2 text-sm w-full"
+                      />
+                    </div>
+                  </div>
+                  {profileError && <p className="text-red-600 text-sm">{profileError}</p>}
+                  {profileSuccess && <p className="text-green-600 text-sm">Saved.</p>}
+                  <div>
+                    <button
+                      type="submit" disabled={profileLoading}
+                      className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm disabled:opacity-50"
+                    >
+                      {profileLoading ? 'Saving…' : 'Save profile'}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              {/* Account actions */}
+              <section className="px-6 py-5">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Account</h3>
+                <div className="flex flex-wrap gap-3">
+                  {isAdmin && (
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium ${target.emailConfirmed ? 'text-green-600' : 'text-amber-600'}`}>
+                        {target.emailConfirmed ? 'Email verified' : 'Email unverified'}
+                      </span>
+                      {!target.emailConfirmed && (
+                        <button
+                          onClick={handleVerify} disabled={verifyLoading}
+                          className="text-xs px-3 py-1.5 rounded border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-50"
+                        >
+                          {verifyLoading ? 'Verifying…' : 'Mark as verified'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {canSuspend && !isSelf && (
+                    <button
+                      onClick={handleSuspendToggle} disabled={suspendLoading}
+                      className={`text-xs px-3 py-1.5 rounded border disabled:opacity-50 ${
+                        target.status === 'suspended'
+                          ? 'border-green-300 text-green-700 hover:bg-green-50'
+                          : 'border-red-300 text-red-700 hover:bg-red-50'
+                      }`}
+                    >
+                      {suspendLoading ? '…' : target.status === 'suspended' ? 'Unsuspend' : 'Suspend'}
+                    </button>
+                  )}
+                </div>
+              </section>
+
+              {/* Password */}
+              {canResetPassword && !isSelf && (
+                <section className="px-6 py-5">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Reset password</h3>
+                  <form onSubmit={handlePasswordSave} className="flex gap-3 items-end">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">New password</label>
+                      <input
+                        type="password" required minLength={6} value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        placeholder="Min 6 characters"
+                        className="border rounded px-3 py-2 text-sm w-full"
+                      />
+                    </div>
+                    <button
+                      type="submit" disabled={pwdLoading}
+                      className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {pwdLoading ? 'Saving…' : 'Set password'}
+                    </button>
+                  </form>
+                  {pwdError && <p className="text-red-600 text-sm mt-2">{pwdError}</p>}
+                  {pwdSuccess && <p className="text-green-600 text-sm mt-2">Password updated.</p>}
+                </section>
+              )}
+
+              {/* Permissions */}
+              {isAdmin && !isSelf && (
+                <section className="px-6 py-5">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Permissions</h3>
+                  <form onSubmit={handlePermSave} className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {ALL_PERMISSIONS.map(p => (
+                        <label key={p} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={permSelection.includes(p)}
+                            onChange={e => setPermSelection(prev =>
+                              e.target.checked ? [...prev, p] : prev.filter(x => x !== p)
+                            )}
+                          />
+                          <span className="font-mono text-xs">{p}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {permError && <p className="text-red-600 text-sm">{permError}</p>}
+                    {permSuccess && <p className="text-green-600 text-sm">Permissions saved.</p>}
+                    <div className="mt-1">
+                      <button
+                        type="submit" disabled={permLoading}
+                        className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm disabled:opacity-50"
+                      >
+                        {permLoading ? 'Saving…' : 'Save permissions'}
+                      </button>
+                    </div>
+                  </form>
+                </section>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t flex justify-end">
+              <button
+                onClick={closeManage}
+                className="px-4 py-2 rounded border text-sm hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

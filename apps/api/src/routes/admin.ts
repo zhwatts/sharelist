@@ -35,6 +35,7 @@ router.get('/', requirePermission('usermanage:listusers'), async (req: Request, 
       avatarUrl: (profile as Record<string, unknown>)['avatar_url'] ?? null,
       status: (profile as Record<string, unknown>)['status'] ?? 'active',
       permissions: (u.app_metadata?.['permissions'] as string[] | undefined) ?? [],
+      emailConfirmed: !!u.email_confirmed_at,
       createdAt: u.created_at,
     }
   })
@@ -90,6 +91,23 @@ router.post('/:id/password', requirePermission('usermanage:updatepassword'), asy
   }
 
   log('info', 'Admin password reset', { adminId: req.user!.id, targetId: id })
+  const result: ApiResult<{ success: boolean }> = { data: { success: true }, error: null }
+  res.json(result)
+})
+
+// POST /admin/users/:id/verify — mark user's email as verified (admin role)
+router.post('/:id/verify', requireAdmin, async (req: Request, res: Response) => {
+  const id = req.params['id'] as string
+
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { email_confirm: true })
+  if (error) {
+    log('error', 'Verify user failed', { adminId: req.user!.id, targetId: id, error: error.message })
+    const err: ApiError = { data: null, error: { message: error.message } }
+    res.status(500).json(err)
+    return
+  }
+
+  log('info', 'User email verified by admin', { adminId: req.user!.id, targetId: id })
   const result: ApiResult<{ success: boolean }> = { data: { success: true }, error: null }
   res.json(result)
 })

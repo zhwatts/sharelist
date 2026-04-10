@@ -98,6 +98,7 @@ export interface AdminUser {
   avatarUrl: string | null
   status: string
   permissions: string[]
+  emailConfirmed: boolean
   createdAt: string
 }
 
@@ -135,6 +136,10 @@ export function adminResetPassword(id: string, password: string): Promise<ApiRes
     method: 'POST',
     body: JSON.stringify({ password }),
   })
+}
+
+export function verifyUser(id: string): Promise<ApiResult<{ success: boolean }>> {
+  return request<{ success: boolean }>(`/admin/users/${id}/verify`, { method: 'POST' })
 }
 
 export function updateUserPermissions(id: string, permissions: string[]): Promise<ApiResult<{ permissions: string[] }>> {
