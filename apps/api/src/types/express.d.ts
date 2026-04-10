@@ -10,6 +10,7 @@ declare module 'express-serve-static-core' {
       email: string
       role: string
       amr: string[] | null
+      permissions: string[]
     }
   }
 }

@@ -58,6 +58,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     email: user.email ?? '',
     role: (user.app_metadata?.['role'] as string | undefined) ?? 'user',
     amr,
+    permissions: (user.app_metadata?.['permissions'] as string[] | undefined) ?? [],
   }
 
   next()
@@ -73,4 +74,18 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
     return
   }
   next()
+}
+
+export function requirePermission(permission: string) {
+  return function (req: Request, res: Response, next: NextFunction): void {
+    if (!req.user) {
+      res.status(401).json({ data: null, error: { message: 'Unauthorized' } })
+      return
+    }
+    if (!req.user.permissions.includes(permission)) {
+      res.status(403).json({ data: null, error: { message: `Missing required permission: ${permission}` } })
+      return
+    }
+    next()
+  }
 }
