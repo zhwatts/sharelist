@@ -10,6 +10,7 @@ const PERMISSION_META = [
   { key: 'usermanage:updatepassword', label: 'Reset passwords', description: 'Can reset passwords for other users' },
   { key: 'usermanage:deleteusers', label: 'Delete users', description: 'Can permanently delete user accounts' },
   { key: 'usermanage:editpermissions', label: 'Edit permissions', description: 'Can grant or revoke permissions for other users' },
+  { key: 'account:selfmanage', label: 'Full self-management', description: 'Can manage all aspects of their own account, including their own permissions' },
 ]
 
 export function AdminUsers() {
@@ -62,10 +63,14 @@ export function AdminUsers() {
   const canResetPassword = me?.permissions.includes('usermanage:updatepassword') ?? false
   const canDelete = me?.permissions.includes('usermanage:deleteusers') ?? false
   const canEditPermissions = me?.permissions.includes('usermanage:editpermissions') ?? false
+  const canSelfManage = me?.permissions.includes('account:selfmanage') ?? false
   const isAdmin = me?.role === 'admin'
   const isSelf = target?.id === me?.id
-  // readOnly: can view the modal but has no write permissions
-  const readOnly = !isAdmin && !canSuspend && !canResetPassword && !canEditPermissions && !canDelete
+  // canActOnTarget: true when the viewer can take actions on this specific user
+  // (either because it's not themselves, or because they hold account:selfmanage)
+  const canActOnTarget = !isSelf || canSelfManage
+  // readOnly: can view the modal but has no write permissions applicable to this user
+  const readOnly = !isAdmin && !canSuspend && !canResetPassword && !canEditPermissions && !canDelete && !(canSelfManage && isSelf)
 
   const load = async () => {
     const result = await api.listAdminUsers()
@@ -432,7 +437,7 @@ export function AdminUsers() {
               </section>
 
               {/* Account access */}
-              {!isSelf && (
+              {canActOnTarget && (
                 <section className="px-6 py-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Account access</p>
                   <div className="flex items-center justify-between gap-4">
@@ -444,7 +449,7 @@ export function AdminUsers() {
                           : 'This user can sign in normally'}
                       </p>
                     </div>
-                    {!readOnly && canSuspend && (
+                    {(canSuspend || (canSelfManage && isSelf)) && (
                       <button onClick={handleSuspendToggle} disabled={suspendLoading}
                         className={`shrink-0 text-xs px-4 py-2 rounded-lg border font-medium disabled:opacity-50 transition-colors ${
                           target.status === 'suspended'
@@ -459,7 +464,7 @@ export function AdminUsers() {
               )}
 
               {/* Security */}
-              {canResetPassword && !isSelf && (
+              {(canResetPassword || (canSelfManage && isSelf)) && canActOnTarget && (
                 <section className="px-6 py-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Security</p>
                   <form onSubmit={handlePasswordSave} className="space-y-3">
@@ -485,7 +490,7 @@ export function AdminUsers() {
               )}
 
               {/* Permissions */}
-              {!isSelf && (
+              {canActOnTarget && (
                 <section className="px-6 py-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Permissions</p>
                   <form onSubmit={handlePermSave} className="space-y-1">
@@ -497,8 +502,8 @@ export function AdminUsers() {
                         </div>
                         <button
                           type="button"
-                          disabled={!canEditPermissions}
-                          onClick={() => canEditPermissions && setPermSelection(prev =>
+                          disabled={!(canEditPermissions || (canSelfManage && isSelf))}
+                          onClick={() => (canEditPermissions || (canSelfManage && isSelf)) && setPermSelection(prev =>
                             prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key]
                           )}
                           className={`relative inline-flex h-6 w-11 shrink-0 ml-6 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 disabled:cursor-not-allowed disabled:opacity-60 ${
@@ -512,7 +517,7 @@ export function AdminUsers() {
                       </div>
                     ))}
                     {permError && <p className="text-red-600 text-sm pt-2">{permError}</p>}
-                    {canEditPermissions && (
+                    {(canEditPermissions || (canSelfManage && isSelf)) && (
                       <div className="flex items-center gap-3 pt-3">
                         <button type="submit" disabled={permLoading}
                           className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50">
@@ -526,7 +531,7 @@ export function AdminUsers() {
               )}
 
               {/* Danger zone */}
-              {canDelete && !isSelf && (
+              {(canDelete || (canSelfManage && isSelf)) && canActOnTarget && (
                 <section className="px-6 py-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-red-400 mb-4">Danger zone</p>
                   {!deleteConfirm ? (
