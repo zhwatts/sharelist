@@ -94,6 +94,46 @@ router.post('/:id/password', requirePermission('usermanage:updatepassword'), asy
   res.json(result)
 })
 
+// PATCH /admin/users/:id — update display_name and/or avatar_url for any user (admin role)
+router.patch('/:id', requireAdmin, async (req: Request, res: Response) => {
+  const id = req.params['id'] as string
+  const body = req.body as Record<string, unknown>
+  const updates: { display_name?: string; avatar_url?: string } = {}
+
+  if ('display_name' in body) {
+    if (typeof body['display_name'] !== 'string') {
+      res.status(400).json({ data: null, error: { message: 'display_name must be a string' } })
+      return
+    }
+    updates.display_name = body['display_name']
+  }
+
+  if ('avatar_url' in body) {
+    if (typeof body['avatar_url'] !== 'string') {
+      res.status(400).json({ data: null, error: { message: 'avatar_url must be a string' } })
+      return
+    }
+    updates.avatar_url = body['avatar_url']
+  }
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ data: null, error: { message: 'No valid fields to update' } })
+    return
+  }
+
+  const { error } = await supabaseAdmin.from('profiles').update(updates).eq('id', id)
+  if (error) {
+    log('error', 'Admin profile update failed', { adminId: req.user!.id, targetId: id, error: error.message })
+    const err: ApiError = { data: null, error: { message: error.message } }
+    res.status(500).json(err)
+    return
+  }
+
+  log('info', 'Admin updated user profile', { adminId: req.user!.id, targetId: id, updates })
+  const result: ApiResult<{ success: boolean }> = { data: { success: true }, error: null }
+  res.json(result)
+})
+
 // PATCH /admin/users/:id/suspend
 router.patch('/:id/suspend', requirePermission('usermanage:suspend'), async (req: Request, res: Response) => {
   const id = req.params['id'] as string

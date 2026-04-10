@@ -101,6 +101,16 @@ export interface AdminUser {
   createdAt: string
 }
 
+export function adminUpdateUser(
+  id: string,
+  updates: { display_name?: string; avatar_url?: string }
+): Promise<ApiResult<{ success: boolean }>> {
+  return request<{ success: boolean }>(`/admin/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  })
+}
+
 export function listAdminUsers(): Promise<ApiResult<AdminUser[]>> {
   return request<AdminUser[]>('/admin/users')
 }

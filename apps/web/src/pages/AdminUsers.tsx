@@ -28,6 +28,13 @@ export function AdminUsers() {
   const [resetError, setResetError] = useState<string | null>(null)
   const [resetLoading, setResetLoading] = useState(false)
 
+  // Edit user modal
+  const [editTarget, setEditTarget] = useState<AdminUser | null>(null)
+  const [editDisplayName, setEditDisplayName] = useState('')
+  const [editAvatarUrl, setEditAvatarUrl] = useState('')
+  const [editError, setEditError] = useState<string | null>(null)
+  const [editLoading, setEditLoading] = useState(false)
+
   // Permissions modal
   const [permTarget, setPermTarget] = useState<AdminUser | null>(null)
   const [permSelection, setPermSelection] = useState<string[]>([])
@@ -77,6 +84,28 @@ export function AdminUsers() {
     if (api.isError(result)) { setResetError(result.error.message); return }
     setResetTarget(null)
     setResetPassword('')
+  }
+
+  const openEdit = (u: AdminUser) => {
+    setEditTarget(u)
+    setEditDisplayName(u.displayName ?? '')
+    setEditAvatarUrl(u.avatarUrl ?? '')
+    setEditError(null)
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editTarget) return
+    setEditError(null)
+    setEditLoading(true)
+    const result = await api.adminUpdateUser(editTarget.id, {
+      display_name: editDisplayName,
+      avatar_url: editAvatarUrl,
+    })
+    setEditLoading(false)
+    if (api.isError(result)) { setEditError(result.error.message); return }
+    setEditTarget(null)
+    await load()
   }
 
   const openPermissions = (u: AdminUser) => {
@@ -202,6 +231,14 @@ export function AdminUsers() {
                         Reset pwd
                       </button>
                     )}
+                    {isAdmin && (
+                      <button
+                        onClick={() => openEdit(u)}
+                        className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        Edit
+                      </button>
+                    )}
                     {isAdmin && u.id !== me?.id && (
                       <button
                         onClick={() => openPermissions(u)}
@@ -222,6 +259,49 @@ export function AdminUsers() {
           </tbody>
         </table>
       </div>
+
+      {/* Edit user modal */}
+      {editTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
+            <h2 className="font-semibold mb-1">Edit user</h2>
+            <p className="text-sm text-gray-500 mb-4">{editTarget.email}</p>
+            <form onSubmit={handleEditSubmit} className="flex flex-col gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Display name</label>
+                <input
+                  type="text" placeholder="Display name" value={editDisplayName}
+                  onChange={e => setEditDisplayName(e.target.value)}
+                  className="border rounded px-3 py-2 text-sm w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Avatar URL</label>
+                <input
+                  type="url" placeholder="https://…" value={editAvatarUrl}
+                  onChange={e => setEditAvatarUrl(e.target.value)}
+                  className="border rounded px-3 py-2 text-sm w-full"
+                />
+              </div>
+              {editError && <p className="text-red-600 text-sm">{editError}</p>}
+              <div className="flex gap-2">
+                <button
+                  type="submit" disabled={editLoading}
+                  className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm disabled:opacity-50"
+                >
+                  {editLoading ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  type="button" onClick={() => setEditTarget(null)}
+                  className="px-4 py-2 rounded border text-sm hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Reset password modal */}
       {resetTarget && (
