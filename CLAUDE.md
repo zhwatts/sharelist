@@ -47,6 +47,24 @@ developer has explicitly moved it to "In Progress" first.
   without explicit developer instruction
 - Agents must never move an issue to Done — that is the developer's action only
 
+**Commit cadence — mandatory:**
+Agents must commit after each meaningful, self-contained unit of work. Do not
+batch multiple unrelated changes into one commit or wait until a story is fully
+complete before committing. Commit at natural checkpoints such as:
+
+- After each discrete backend change (new route, middleware, migration)
+- After each discrete frontend change (new component, page, or section)
+- After any bug fix, regardless of size
+- After updating documentation or configuration
+
+Each commit must:
+- Pass `tsc --noEmit` for any app whose files were touched before committing
+- Reference the issue number in the message body (e.g. `(#23)`)
+- Use a concise imperative subject line (50 chars or fewer where possible)
+- Be pushed to the remote branch immediately after it is created
+
+Never leave working, type-safe code uncommitted at the end of a task.
+
 **No work without a ticket — no exceptions:**
 This rule applies to every change, no matter how small: config edits, env var
 changes, refactors, dependency updates, documentation. If there is no open
