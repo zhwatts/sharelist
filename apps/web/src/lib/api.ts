@@ -177,3 +177,55 @@ export function updateProfile(
     body: JSON.stringify(updates),
   })
 }
+
+// ─── Streaming ────────────────────────────────────────────────────────────────
+
+export interface StreamingProvider {
+  name: string
+  displayName: string
+}
+
+export interface ConnectedService {
+  provider: string
+  providerUserId: string | null
+  connectedAt: string
+}
+
+export interface StreamingPlaylist {
+  id: string
+  name: string
+  description?: string
+  trackCount: number
+  imageUrl?: string
+  externalUrl?: string
+}
+
+export function listStreamingProviders(): Promise<ApiResult<StreamingProvider[]>> {
+  return request<StreamingProvider[]>('/streaming/providers')
+}
+
+export function getConnectedServices(): Promise<ApiResult<ConnectedService[]>> {
+  return request<ConnectedService[]>('/streaming/connected')
+}
+
+export function getStreamingAuthUrl(provider: string): Promise<ApiResult<{ url: string }>> {
+  return request<{ url: string }>(`/streaming/${provider}/auth-url`)
+}
+
+export function submitAppleMusicToken(
+  code: string,
+  state: string,
+): Promise<ApiResult<{ providerUserId: string }>> {
+  return request<{ providerUserId: string }>('/streaming/apple_music/callback', {
+    method: 'POST',
+    body: JSON.stringify({ code, state }),
+  })
+}
+
+export function getStreamingPlaylists(provider: string): Promise<ApiResult<StreamingPlaylist[]>> {
+  return request<StreamingPlaylist[]>(`/streaming/${provider}/playlists`)
+}
+
+export function disconnectStreamingService(provider: string): Promise<ApiResult<{ disconnected: boolean }>> {
+  return request<{ disconnected: boolean }>(`/streaming/${provider}`, { method: 'DELETE' })
+}

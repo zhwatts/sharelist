@@ -10,6 +10,7 @@ import { MagicLinkConfirm } from './pages/MagicLinkConfirm'
 import { Profile } from './pages/Profile'
 import { PlaylistView } from './pages/PlaylistView'
 import { AdminUsers } from './pages/AdminUsers'
+import { Settings } from './pages/Settings'
 
 const SL = {
   bg: '#111314',
@@ -97,7 +98,9 @@ function App() {
             }
           />
           <Route path="/friends" element={<ComingSoon title="Friends" />} />
-          <Route path="/settings" element={<ComingSoon title="Settings" />} />
+          {/* /settings and /settings/streaming (post-OAuth landing) both render Settings */}
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/streaming" element={<Settings />} />
         </Route>
       </Routes>
     </ConfigProvider>
