@@ -8,6 +8,7 @@ import type { ApiResult } from '@sharelist/shared'
 import authRouter from './routes/auth'
 import usersRouter from './routes/users'
 import adminRouter from './routes/admin'
+import streamingRouter from './routes/streaming'
 
 const app = express()
 const PORT = process.env['PORT'] ?? 3001
@@ -24,6 +25,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/auth', authRouter)
 app.use('/users', usersRouter)
 app.use('/admin/users', adminRouter)
+app.use('/streaming', streamingRouter)
 
 app.listen(PORT, () => {
   console.log(JSON.stringify({ level: 'info', message: `API listening on port ${PORT}`, port: PORT }))
