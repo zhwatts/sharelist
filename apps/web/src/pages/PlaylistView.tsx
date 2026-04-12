@@ -4,6 +4,7 @@ import { PlaylistHero } from '../components/PlaylistHero'
 import { SyncStatusBar } from '../components/SyncStatusBar'
 import { TrackList } from '../components/TrackList'
 import { LaunchStreamingFAB } from '../components/LaunchStreamingFAB'
+import { LinkPlatformModal } from '../components/LinkPlatformModal'
 import type { Track } from '../components/TrackList'
 
 const { Content } = Layout
@@ -28,6 +29,7 @@ const mockTracks: Track[] = [
 
 export function PlaylistView() {
   const [isLoading, setIsLoading] = useState(true)
+  const [showLinkModal, setShowLinkModal] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1500)
@@ -41,7 +43,7 @@ export function PlaylistView() {
       </div>
 
       <div style={{ marginBottom: '24px' }}>
-        <SyncStatusBar isLoading={isLoading} />
+        <SyncStatusBar isLoading={isLoading} onManage={() => setShowLinkModal(true)} />
       </div>
 
       {isLoading ? (
@@ -66,7 +68,14 @@ export function PlaylistView() {
         <TrackList tracks={mockTracks} />
       )}
 
-      <LaunchStreamingFAB />
+      <LaunchStreamingFAB onClick={() => setShowLinkModal(true)} />
+
+      {showLinkModal && (
+        <LinkPlatformModal
+          onClose={() => setShowLinkModal(false)}
+          onConnected={() => setShowLinkModal(false)}
+        />
+      )}
     </Content>
   )
 }

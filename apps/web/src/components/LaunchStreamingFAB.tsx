@@ -1,12 +1,17 @@
 import { Button } from 'antd'
 import { ExternalLink } from 'lucide-react'
 
-export function LaunchStreamingFAB() {
+interface LaunchStreamingFABProps {
+  onClick: () => void
+}
+
+export function LaunchStreamingFAB({ onClick }: LaunchStreamingFABProps) {
   return (
     <Button
       type="primary"
       shape="circle"
       size="large"
+      onClick={onClick}
       icon={<ExternalLink style={{ width: '24px', height: '24px', color: '#FFFFFF' }} />}
       style={{
         position: 'fixed',

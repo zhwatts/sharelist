@@ -2,9 +2,10 @@ import { Badge, Button, Flex, Skeleton } from 'antd'
 
 interface SyncStatusBarProps {
   isLoading?: boolean
+  onManage?: () => void
 }
 
-export function SyncStatusBar({ isLoading = false }: SyncStatusBarProps) {
+export function SyncStatusBar({ isLoading = false, onManage }: SyncStatusBarProps) {
   if (isLoading) {
     return (
       <Flex justify="space-between" align="center" style={{ padding: '12px 16px', background: 'rgba(28, 31, 33, 0.3)', borderRadius: '8px' }}>
@@ -24,7 +25,11 @@ export function SyncStatusBar({ isLoading = false }: SyncStatusBarProps) {
         <span style={{ color: '#F1F5F9', fontSize: '13px', fontWeight: 500 }}>Live sync active</span>
         <span style={{ color: '#64748B', fontSize: '12px', fontWeight: 400 }}>· last updated 2 min ago</span>
       </Flex>
-      <Button type="link" style={{ color: '#38BDF8', fontSize: '13px', fontWeight: 600, padding: 0 }}>
+      <Button
+        type="link"
+        onClick={onManage}
+        style={{ color: '#38BDF8', fontSize: '13px', fontWeight: 600, padding: 0 }}
+      >
         Manage
       </Button>
     </Flex>

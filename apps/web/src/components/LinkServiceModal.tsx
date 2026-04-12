@@ -43,23 +43,6 @@ const PROVIDER_META: Record<string, { color: string; icon: string; description: 
   },
 }
 
-// ── MusicKit types (window-injected) ─────────────────────────────────────────
-
-interface MusicKitInstance {
-  authorize(): Promise<string>
-}
-
-interface MusicKitGlobal {
-  configure(config: { developerToken: string; app: { name: string; build: string } }): MusicKitInstance
-  getInstance(): MusicKitInstance
-}
-
-declare global {
-  interface Window {
-    MusicKit?: MusicKitGlobal
-  }
-}
-
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface LinkServiceModalProps {
