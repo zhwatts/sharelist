@@ -178,7 +178,7 @@ export class SpotifyProvider implements StreamingProvider {
     let url: string | null = 'https://api.spotify.com/v1/me/playlists?limit=50'
 
     while (url) {
-      const res = await fetch(url, {
+      const res = await spotifyFetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
 
@@ -195,6 +195,9 @@ export class SpotifyProvider implements StreamingProvider {
           id: item.id,
           name: item.name,
           description: item.description ?? undefined,
+          // tracks.total from the listing endpoint is deprecated and unreliable —
+          // Spotify frequently returns 0 here even for populated playlists.
+          // We resolve accurate counts below via individual playlist calls.
           trackCount: item.tracks?.total ?? 0,
           imageUrl: item.images[0]?.url,
           externalUrl: item.external_urls.spotify,
@@ -202,6 +205,29 @@ export class SpotifyProvider implements StreamingProvider {
       }
 
       url = data.next
+    }
+
+    // The listing endpoint's tracks.total is deprecated and often wrong (returns 0).
+    // For any playlist still showing 0, fetch the accurate count from the individual
+    // playlist endpoint in parallel. This follows Spotify's recommendation to use
+    // /playlists/{id} for reliable metadata.
+    const needsCount = playlists.filter(p => p.trackCount === 0)
+    if (needsCount.length > 0) {
+      const results = await Promise.allSettled(
+        needsCount.map(p =>
+          spotifyFetch(
+            `https://api.spotify.com/v1/playlists/${encodeURIComponent(p.id)}?fields=tracks.total`,
+            { headers: { Authorization: `Bearer ${accessToken}` } },
+          ).then(r => r.json() as Promise<{ tracks: { total: number } | null }>),
+        ),
+      )
+      for (let i = 0; i < needsCount.length; i++) {
+        const result = results[i]
+        if (result.status === 'fulfilled') {
+          const total = result.value.tracks?.total
+          if (typeof total === 'number') needsCount[i].trackCount = total
+        }
+      }
     }
 
     return playlists
