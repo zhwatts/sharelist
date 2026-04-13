@@ -16,6 +16,7 @@ import { Router, type Request, type Response } from 'express'
 import { requireAuth } from '../middleware/auth'
 import { supabaseAdmin } from '../lib/supabase'
 import { getProvider } from '../streaming/registry'
+import { runCrossSync } from '../services/crossSync'
 
 // Side-effect: ensure providers are registered
 import '../streaming/spotify'
@@ -439,6 +440,42 @@ router.post('/:id/links', requireAuth, async (req: Request, res: Response) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     log('error', 'POST /sharelists/:id/links failed', { id, userId, error: message })
+    res.status(500).json({ data: null, error: { message } })
+  }
+})
+
+// ── POST /sharelists/:id/cross-sync ──────────────────────────────────────────
+//
+// Pushes merged tracks back to every linked playlist so all users end up with
+// the full combined track list. Same-provider only in this iteration.
+// Returns a per-link breakdown of how many tracks were added.
+
+router.post('/:id/cross-sync', requireAuth, async (req: Request, res: Response) => {
+  const userId = req.user!.id
+  const { id } = req.params as { id: string }
+
+  try {
+    // Verify ownership before running the sync
+    const { data: list, error: listErr } = await supabaseAdmin
+      .from('sharelists')
+      .select('id')
+      .eq('id', id)
+      .eq('owner_id', userId)
+      .single()
+
+    if (listErr || !list) {
+      res.status(404).json({ data: null, error: { message: 'ShareList not found' } })
+      return
+    }
+
+    log('info', 'cross-sync started', { sharelistId: id, userId })
+    const result = await runCrossSync(userId, id)
+    log('info', 'cross-sync complete', { sharelistId: id, userId, totalAdded: result.totalAdded })
+
+    res.json({ data: result, error: null })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    log('error', 'POST /sharelists/:id/cross-sync failed', { id, userId, error: message })
     res.status(500).json({ data: null, error: { message } })
   }
 })
