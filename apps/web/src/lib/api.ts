@@ -254,6 +254,7 @@ export interface ShareListTrack {
   id: string
   title: string
   artist: string
+  provider?: string
   album?: string
   durationMs: number
   imageUrl?: string

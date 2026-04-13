@@ -213,34 +213,34 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
 
     const linkRows = (links ?? []) as SharelistLinkRow[]
 
-    // Fetch tracks from primary link (or first link)
-    const primaryLink = linkRows.find(l => l.is_primary) ?? linkRows[0]
-    let tracks: unknown[] = []
+    // Fetch tracks from ALL linked playlists in parallel, primary first
+    const orderedLinks = [...linkRows].sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+    const trackResults = await Promise.allSettled(
+      orderedLinks.map(async link => {
+        log('info', 'fetching tracks from provider', {
+          sharelistId: id,
+          provider: link.provider,
+          providerPlaylistId: link.provider_playlist_id,
+          isPrimary: link.is_primary,
+        })
+        const provider = getProvider(link.provider)
+        const linkTracks = await provider.getPlaylistTracks(userId, link.provider_playlist_id)
+        return linkTracks.map(t => ({ ...t, provider: link.provider }))
+      }),
+    )
 
-    if (primaryLink) {
-      log('info', 'fetching tracks from provider', {
-        sharelistId: id,
-        provider: primaryLink.provider,
-        providerPlaylistId: primaryLink.provider_playlist_id,
-        storedPlaylistName: primaryLink.provider_playlist_name,
-      })
-      try {
-        const provider = getProvider(primaryLink.provider)
-        tracks = await provider.getPlaylistTracks(userId, primaryLink.provider_playlist_id)
-        log('info', 'tracks fetched', { sharelistId: id, trackCount: tracks.length })
-
-        // If the provider returned updated playlist metadata, refresh the stored name
-        // (handled below by updating the link row)
-      } catch (trackErr) {
-        const errMsg = trackErr instanceof Error ? trackErr.message : 'Unknown'
+    const tracks: unknown[] = []
+    for (let i = 0; i < trackResults.length; i++) {
+      const result = trackResults[i]
+      if (result.status === 'fulfilled') {
+        tracks.push(...result.value)
+        log('info', 'tracks fetched', { sharelistId: id, provider: orderedLinks[i].provider, trackCount: result.value.length })
+      } else {
+        const errMsg = result.reason instanceof Error ? result.reason.message : 'Unknown'
         const hint = errMsg.includes('403')
           ? ' (token may be expired or missing scopes — try disconnecting and reconnecting the service in Settings)'
           : ''
-        log('warn', 'getPlaylistTracks failed', {
-          sharelistId: id,
-          provider: primaryLink.provider,
-          error: errMsg + hint,
-        })
+        log('warn', 'getPlaylistTracks failed', { sharelistId: id, provider: orderedLinks[i].provider, error: errMsg + hint })
       }
     }
 
@@ -344,10 +344,11 @@ router.post('/:id/sync', requireAuth, async (req: Request, res: Response) => {
           trackCount: freshMeta.trackCount,
         })
 
-        if (link.is_primary || (!tracks.length && link === linkRows[0])) {
-          tracks = await provider.getPlaylistTracks(userId, link.provider_playlist_id)
-          log('info', 'tracks synced', { sharelistId: id, trackCount: tracks.length })
-        }
+        // Fetch tracks for every link (not just primary); tagged with provider below
+        const linkTracks = await provider.getPlaylistTracks(userId, link.provider_playlist_id)
+        const tagged = linkTracks.map(t => ({ ...t, provider: link.provider }))
+        tracks.push(...tagged)
+        log('info', 'tracks synced', { sharelistId: id, provider: link.provider, trackCount: linkTracks.length })
       } catch (syncErr) {
         log('warn', 'sync failed for link', {
           sharelistId: id,

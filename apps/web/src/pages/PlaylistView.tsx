@@ -77,7 +77,7 @@ export function PlaylistView() {
     artist: t.artist,
     duration: formatDuration(t.durationMs),
     albumArt: t.imageUrl,
-    platform: primaryLink?.provider as Track['platform'] | undefined,
+    platform: t.provider as Track['platform'] | undefined,
   }))
 
   const heroLinks = (sharelist?.links ?? []).map(l => ({
