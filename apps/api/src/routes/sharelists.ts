@@ -328,6 +328,15 @@ router.post('/:id/sync', requireAuth, async (req: Request, res: Response) => {
         link.provider_playlist_image_url = freshMeta.imageUrl ?? null
         if (freshMeta.externalUrl) link.provider_playlist_external_url = freshMeta.externalUrl
 
+        // Keep the ShareList's own name in sync with the primary playlist's name
+        if (link.is_primary && freshMeta.name !== (list as SharelistRow).name) {
+          await supabaseAdmin
+            .from('sharelists')
+            .update({ name: freshMeta.name, updated_at: new Date().toISOString() })
+            .eq('id', id)
+          ;(list as SharelistRow).name = freshMeta.name
+        }
+
         log('info', 'link metadata refreshed', {
           sharelistId: id,
           provider: link.provider,
