@@ -57,10 +57,23 @@ export function PlaylistView() {
       return
     }
     const { totalAdded, links } = result.data
-    if (totalAdded === 0) {
+    const linkErrors = links.filter(l => l.error)
+
+    if (totalAdded === 0 && linkErrors.length > 0) {
+      // One or more provider calls failed — surface the actual error
+      const description = linkErrors
+        .map(l => `${l.playlistName}: ${l.error}`)
+        .join('\n')
+      notifyApi.error({
+        message: 'Cross Sync failed',
+        description,
+        placement: 'topRight',
+        duration: 10,
+      })
+    } else if (totalAdded === 0) {
       notifyApi.info({
         message: 'Already up to date',
-        description: 'All playlists already have the same tracks.',
+        description: 'All linked playlists already share the same tracks.',
         placement: 'topRight',
       })
     } else {
