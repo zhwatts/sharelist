@@ -106,7 +106,7 @@ export class SpotifyProvider implements StreamingProvider {
       redirect_uri: redirectUri(),
       scope: scopes,
       state,
-      show_dialog: 'false',
+      show_dialog: 'true',
     })
 
     return `https://accounts.spotify.com/authorize?${params.toString()}`
@@ -117,6 +117,14 @@ export class SpotifyProvider implements StreamingProvider {
 
     // Exchange code for tokens
     const tokenRes = await this._exchangeCode(code)
+
+    // Log the scopes Spotify actually granted — useful for diagnosing 403s
+    console.log(JSON.stringify({
+      level: 'info',
+      message: 'Spotify token granted',
+      userId,
+      grantedScopes: tokenRes.scope ?? '(none returned)',
+    }))
 
     // Fetch the Spotify user ID
     const me = await this._fetchMe(tokenRes.access_token)
