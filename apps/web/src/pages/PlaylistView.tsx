@@ -33,13 +33,11 @@ export function PlaylistView() {
   const [error, setError]                 = useState<string | null>(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
 
-  const loadShareList = async (isSync = false) => {
+  const loadShareList = async () => {
     if (!id) return
-    if (isSync) setSyncing(true)
-    else setLoading(true)
+    setLoading(true)
     const result = await api.getShareList(id)
-    if (isSync) setSyncing(false)
-    else setLoading(false)
+    setLoading(false)
     if (api.isError(result)) {
       setError(result.error.message)
       return
@@ -48,7 +46,19 @@ export function PlaylistView() {
     setLastSynced(new Date())
   }
 
-  const handleSync = () => { void loadShareList(true) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleSync = async () => {
+    if (!id) return
+    setSyncing(true)
+    const result = await api.syncShareList(id)
+    setSyncing(false)
+    if (api.isError(result)) {
+      notifyApi.error({ message: 'Sync failed', description: result.error.message, placement: 'topRight' })
+      return
+    }
+    setSharelist(result.data)
+    setLastSynced(new Date())
+  }
 
   useEffect(() => {
     void loadShareList()
@@ -106,7 +116,7 @@ export function PlaylistView() {
           syncing={syncing}
           lastSynced={lastSynced}
           onManage={() => setShowLinkModal(true)}
-          onSync={handleSync}
+          onSync={() => { void handleSync() }}
         />
       </div>
 

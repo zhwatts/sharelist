@@ -285,6 +285,10 @@ export function getShareList(id: string): Promise<ApiResult<ShareListDetail>> {
   return request<ShareListDetail>(`/sharelists/${id}`)
 }
 
+export function syncShareList(id: string): Promise<ApiResult<ShareListDetail>> {
+  return request<ShareListDetail>(`/sharelists/${id}/sync`, { method: 'POST' })
+}
+
 export function linkPlaylistToShareList(
   sharelistId: string,
   data: {

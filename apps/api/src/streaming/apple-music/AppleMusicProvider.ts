@@ -192,6 +192,37 @@ export class AppleMusicProvider implements StreamingProvider {
     return playlists
   }
 
+  async getPlaylist(userId: string, playlistId: string): Promise<StreamingPlaylist> {
+    const musicUserToken = await this.refreshTokenIfNeeded(userId)
+    const developerToken = generateDeveloperToken()
+    const res = await fetch(
+      `https://api.music.apple.com/v1/me/library/playlists/${encodeURIComponent(playlistId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${developerToken}`,
+          'Music-User-Token': musicUserToken,
+        },
+      },
+    )
+    if (!res.ok) {
+      const body = await res.text()
+      throw new Error(`Apple Music getPlaylist failed (${res.status}): ${body}`)
+    }
+    const data = (await res.json()) as AppleMusicPlaylistsResponse
+    const item = data.data[0]
+    if (!item) throw new Error(`Apple Music playlist ${playlistId} not found`)
+    const attrs = item.attributes
+    const rawArt = attrs.artwork?.url
+    return {
+      id: item.id,
+      name: attrs.name,
+      description: attrs.description?.standard,
+      trackCount: attrs.trackCount ?? 0,
+      imageUrl: rawArt ? rawArt.replace('{w}', '300').replace('{h}', '300') : undefined,
+      externalUrl: undefined,
+    }
+  }
+
   async getPlaylistTracks(userId: string, playlistId: string): Promise<StreamingTrack[]> {
     const musicUserToken = await this.refreshTokenIfNeeded(userId)
     const developerToken = generateDeveloperToken()

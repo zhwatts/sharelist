@@ -168,6 +168,27 @@ export class SpotifyProvider implements StreamingProvider {
     return playlists
   }
 
+  async getPlaylist(userId: string, playlistId: string): Promise<StreamingPlaylist> {
+    const accessToken = await this.refreshTokenIfNeeded(userId)
+    const res = await fetch(
+      `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}?fields=id,name,description,images,external_urls,tracks.total`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+    if (!res.ok) {
+      const body = await res.text()
+      throw new Error(`Spotify getPlaylist failed (${res.status}): ${body}`)
+    }
+    const data = (await res.json()) as SpotifyPlaylistItem
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description ?? undefined,
+      trackCount: data.tracks?.total ?? 0,
+      imageUrl: data.images[0]?.url,
+      externalUrl: data.external_urls.spotify,
+    }
+  }
+
   async getPlaylistTracks(userId: string, playlistId: string): Promise<StreamingTrack[]> {
     const accessToken = await this.refreshTokenIfNeeded(userId)
     const tracks: StreamingTrack[] = []

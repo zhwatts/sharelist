@@ -218,13 +218,21 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
     let tracks: unknown[] = []
 
     if (primaryLink) {
+      log('info', 'fetching tracks from provider', {
+        sharelistId: id,
+        provider: primaryLink.provider,
+        providerPlaylistId: primaryLink.provider_playlist_id,
+        storedPlaylistName: primaryLink.provider_playlist_name,
+      })
       try {
         const provider = getProvider(primaryLink.provider)
         tracks = await provider.getPlaylistTracks(userId, primaryLink.provider_playlist_id)
+        log('info', 'tracks fetched', { sharelistId: id, trackCount: tracks.length })
+
+        // If the provider returned updated playlist metadata, refresh the stored name
+        // (handled below by updating the link row)
       } catch (trackErr) {
         const errMsg = trackErr instanceof Error ? trackErr.message : 'Unknown'
-        // Non-fatal: return empty tracks with a warning log
-        // Include a hint when Spotify returns 403 — almost always a stale/missing token scope
         const hint = errMsg.includes('403')
           ? ' (token may be expired or missing scopes — try disconnecting and reconnecting the service in Settings)'
           : ''
@@ -258,6 +266,111 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     log('error', 'GET /sharelists/:id failed', { id, userId, error: message })
+    res.status(500).json({ data: null, error: { message } })
+  }
+})
+
+// ── POST /sharelists/:id/sync ─────────────────────────────────────────────────
+//
+// Re-fetches live metadata (name, image) and tracks for every linked playlist,
+// writes the refreshed metadata back to sharelist_links, and returns the
+// updated ShareList detail exactly like GET /:id.
+
+router.post('/:id/sync', requireAuth, async (req: Request, res: Response) => {
+  const userId = req.user!.id
+  const { id } = req.params as { id: string }
+
+  try {
+    const { data: list, error: listErr } = await supabaseAdmin
+      .from('sharelists')
+      .select('*')
+      .eq('id', id)
+      .eq('owner_id', userId)
+      .single()
+
+    if (listErr) {
+      if (listErr.code === 'PGRST116') {
+        res.status(404).json({ data: null, error: { message: 'ShareList not found' } })
+        return
+      }
+      throw new Error(listErr.message)
+    }
+
+    const { data: links, error: linkErr } = await supabaseAdmin
+      .from('sharelist_links')
+      .select('*')
+      .eq('sharelist_id', id)
+      .order('is_primary', { ascending: false })
+
+    if (linkErr) throw new Error(linkErr.message)
+
+    const linkRows = (links ?? []) as SharelistLinkRow[]
+    let tracks: unknown[] = []
+
+    // Refresh every linked playlist's metadata and collect tracks from primary
+    for (const link of linkRows) {
+      try {
+        const provider = getProvider(link.provider)
+        const freshMeta = await provider.getPlaylist(userId, link.provider_playlist_id)
+
+        // Persist refreshed name and image back to DB
+        await supabaseAdmin
+          .from('sharelist_links')
+          .update({
+            provider_playlist_name: freshMeta.name,
+            provider_playlist_image_url: freshMeta.imageUrl ?? null,
+            provider_playlist_external_url: freshMeta.externalUrl ?? link.provider_playlist_external_url,
+          })
+          .eq('id', link.id)
+
+        // Merge fresh metadata into the in-memory row for the response
+        link.provider_playlist_name = freshMeta.name
+        link.provider_playlist_image_url = freshMeta.imageUrl ?? null
+        if (freshMeta.externalUrl) link.provider_playlist_external_url = freshMeta.externalUrl
+
+        log('info', 'link metadata refreshed', {
+          sharelistId: id,
+          provider: link.provider,
+          freshName: freshMeta.name,
+          trackCount: freshMeta.trackCount,
+        })
+
+        if (link.is_primary || (!tracks.length && link === linkRows[0])) {
+          tracks = await provider.getPlaylistTracks(userId, link.provider_playlist_id)
+          log('info', 'tracks synced', { sharelistId: id, trackCount: tracks.length })
+        }
+      } catch (syncErr) {
+        log('warn', 'sync failed for link', {
+          sharelistId: id,
+          linkId: link.id,
+          provider: link.provider,
+          error: syncErr instanceof Error ? syncErr.message : 'Unknown',
+        })
+      }
+    }
+
+    res.json({
+      data: {
+        id: (list as SharelistRow).id,
+        name: (list as SharelistRow).name,
+        ownerId: (list as SharelistRow).owner_id,
+        createdAt: (list as SharelistRow).created_at,
+        links: linkRows.map(l => ({
+          id: l.id,
+          provider: l.provider,
+          playlistId: l.provider_playlist_id,
+          playlistName: l.provider_playlist_name,
+          imageUrl: l.provider_playlist_image_url,
+          externalUrl: l.provider_playlist_external_url,
+          isPrimary: l.is_primary,
+        })),
+        tracks,
+      },
+      error: null,
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    log('error', 'POST /sharelists/:id/sync failed', { id, userId, error: message })
     res.status(500).json({ data: null, error: { message } })
   }
 })

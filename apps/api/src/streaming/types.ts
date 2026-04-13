@@ -55,6 +55,9 @@ export interface StreamingProvider {
   /** Fetch the user's playlists from the provider, refreshing tokens as needed. */
   getPlaylists(userId: string): Promise<StreamingPlaylist[]>
 
+  /** Fetch current metadata (name, image, track count) for a single playlist. */
+  getPlaylist(userId: string, playlistId: string): Promise<StreamingPlaylist>
+
   /** Fetch all tracks from a specific playlist, paginating as needed. */
   getPlaylistTracks(userId: string, playlistId: string): Promise<StreamingTrack[]>
 
