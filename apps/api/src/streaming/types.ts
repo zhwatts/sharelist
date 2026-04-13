@@ -68,6 +68,23 @@ export interface StreamingProvider {
    */
   refreshTokenIfNeeded(userId: string): Promise<string>
 
+  /**
+   * Adds tracks to a playlist on the provider.
+   *
+   * `trackIds` are the provider-native track IDs (e.g. Spotify track IDs —
+   * the service is responsible for converting them to the required URI format).
+   *
+   * Returns the number of tracks actually added (may be less than
+   * `trackIds.length` if some were already present or rejected by the provider).
+   *
+   * Providers that do not yet support writing should throw with a clear message.
+   */
+  addTracksToPlaylist(
+    userId: string,
+    playlistId: string,
+    trackIds: string[],
+  ): Promise<{ added: number }>
+
   /** Removes all stored tokens for this user / provider pair. */
   disconnect(userId: string): Promise<void>
 }

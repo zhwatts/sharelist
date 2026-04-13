@@ -283,6 +283,18 @@ export class AppleMusicProvider implements StreamingProvider {
     return stored.accessToken
   }
 
+  /**
+   * Not yet implemented for Apple Music.
+   *
+   * Apple Music library write APIs require a different auth scope and are
+   * deferred to a future story. This stub satisfies the StreamingProvider
+   * interface and surfaces a clear error if called unexpectedly.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async addTracksToPlaylist(_userId: string, _playlistId: string, _trackIds: string[]): Promise<{ added: number }> {
+    throw new Error('addTracksToPlaylist is not yet implemented for Apple Music')
+  }
+
   async disconnect(userId: string): Promise<void> {
     await deleteTokens(userId, PROVIDER_NAME)
   }
