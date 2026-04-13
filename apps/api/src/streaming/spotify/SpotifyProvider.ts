@@ -207,25 +207,24 @@ export class SpotifyProvider implements StreamingProvider {
       url = data.next
     }
 
-    // The listing endpoint's tracks.total is deprecated and often wrong (returns 0).
-    // For any playlist still showing 0, fetch the accurate count from the individual
-    // playlist endpoint in parallel. This follows Spotify's recommendation to use
-    // /playlists/{id} for reliable metadata.
+    // The listing endpoint's tracks.total is deprecated and unreliable (often 0).
+    // For any playlist still showing 0, use the /items paging endpoint with limit=1:
+    // even fetching a single item returns an accurate `total` in the paging wrapper,
+    // unlike the deprecated tracks.total metadata field.
     const needsCount = playlists.filter(p => p.trackCount === 0)
     if (needsCount.length > 0) {
       const results = await Promise.allSettled(
         needsCount.map(p =>
           spotifyFetch(
-            `https://api.spotify.com/v1/playlists/${encodeURIComponent(p.id)}?fields=tracks.total`,
+            `https://api.spotify.com/v1/playlists/${encodeURIComponent(p.id)}/items?limit=1&additional_types=track`,
             { headers: { Authorization: `Bearer ${accessToken}` } },
-          ).then(r => r.json() as Promise<{ tracks: { total: number } | null }>),
+          ).then(r => r.json() as Promise<{ total?: number }>),
         ),
       )
       for (let i = 0; i < needsCount.length; i++) {
         const result = results[i]
-        if (result.status === 'fulfilled') {
-          const total = result.value.tracks?.total
-          if (typeof total === 'number') needsCount[i].trackCount = total
+        if (result.status === 'fulfilled' && typeof result.value.total === 'number') {
+          needsCount[i].trackCount = result.value.total
         }
       }
     }
