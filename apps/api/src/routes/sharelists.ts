@@ -222,11 +222,16 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
         const provider = getProvider(primaryLink.provider)
         tracks = await provider.getPlaylistTracks(userId, primaryLink.provider_playlist_id)
       } catch (trackErr) {
+        const errMsg = trackErr instanceof Error ? trackErr.message : 'Unknown'
         // Non-fatal: return empty tracks with a warning log
+        // Include a hint when Spotify returns 403 — almost always a stale/missing token scope
+        const hint = errMsg.includes('403')
+          ? ' (token may be expired or missing scopes — try disconnecting and reconnecting the service in Settings)'
+          : ''
         log('warn', 'getPlaylistTracks failed', {
           sharelistId: id,
           provider: primaryLink.provider,
-          error: trackErr instanceof Error ? trackErr.message : 'Unknown',
+          error: errMsg + hint,
         })
       }
     }
