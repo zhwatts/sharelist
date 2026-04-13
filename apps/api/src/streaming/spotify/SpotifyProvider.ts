@@ -129,7 +129,12 @@ export class SpotifyProvider implements StreamingProvider {
 
   async getAuthUrl(userId: string): Promise<string> {
     const state = generateState(userId)
-    const scopes = ['playlist-read-private', 'playlist-read-collaborative'].join(' ')
+    const scopes = [
+      'playlist-read-private',
+      'playlist-read-collaborative',
+      'playlist-modify-public',
+      'playlist-modify-private',
+    ].join(' ')
 
     const params = new URLSearchParams({
       client_id: clientId(),
@@ -336,6 +341,53 @@ export class SpotifyProvider implements StreamingProvider {
     })
 
     return tokenRes.access_token
+  }
+
+  /**
+   * Adds tracks to a Spotify playlist via POST /playlists/{id}/items.
+   *
+   * Spotify accepts at most 100 URIs per request. We batch accordingly.
+   * Track IDs are converted to spotify:track:{id} URI format as required by
+   * the API — https://developer.spotify.com/reference/web-api/open-api-schema.yaml
+   *
+   * Returns the total number of tracks accepted across all batches.
+   */
+  async addTracksToPlaylist(
+    userId: string,
+    playlistId: string,
+    trackIds: string[],
+  ): Promise<{ added: number }> {
+    if (trackIds.length === 0) return { added: 0 }
+
+    const accessToken = await this.refreshTokenIfNeeded(userId)
+    const BATCH_SIZE = 100
+    let added = 0
+
+    for (let i = 0; i < trackIds.length; i += BATCH_SIZE) {
+      const batch = trackIds.slice(i, i + BATCH_SIZE)
+      const uris = batch.map(id => `spotify:track:${id}`)
+
+      const res = await spotifyFetch(
+        `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/items`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ uris }),
+        },
+      )
+
+      if (!res.ok) {
+        const body = await res.text()
+        throw new Error(`Spotify addTracksToPlaylist failed (${res.status}): ${body}`)
+      }
+
+      added += batch.length
+    }
+
+    return { added }
   }
 
   async disconnect(userId: string): Promise<void> {
