@@ -229,3 +229,74 @@ export function getStreamingPlaylists(provider: string): Promise<ApiResult<Strea
 export function disconnectStreamingService(provider: string): Promise<ApiResult<{ disconnected: boolean }>> {
   return request<{ disconnected: boolean }>(`/streaming/${provider}`, { method: 'DELETE' })
 }
+
+// ─── ShareLists ───────────────────────────────────────────────────────────────
+
+export interface ShareListLink {
+  id?: string
+  provider: string
+  playlistId: string
+  playlistName: string
+  imageUrl: string | null
+  externalUrl: string | null
+  isPrimary: boolean
+}
+
+export interface ShareListSummary {
+  id: string
+  name: string
+  ownerId: string
+  createdAt: string
+  links: ShareListLink[]
+}
+
+export interface ShareListTrack {
+  id: string
+  title: string
+  artist: string
+  album?: string
+  durationMs: number
+  imageUrl?: string
+  externalUrl?: string
+}
+
+export interface ShareListDetail extends ShareListSummary {
+  tracks: ShareListTrack[]
+}
+
+export function listShareLists(): Promise<ApiResult<ShareListSummary[]>> {
+  return request<ShareListSummary[]>('/sharelists')
+}
+
+export function createShareList(data: {
+  provider: string
+  playlistId: string
+  playlistName: string
+  imageUrl?: string | null
+  externalUrl?: string | null
+}): Promise<ApiResult<ShareListSummary>> {
+  return request<ShareListSummary>('/sharelists', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function getShareList(id: string): Promise<ApiResult<ShareListDetail>> {
+  return request<ShareListDetail>(`/sharelists/${id}`)
+}
+
+export function linkPlaylistToShareList(
+  sharelistId: string,
+  data: {
+    provider: string
+    playlistId: string
+    playlistName: string
+    imageUrl?: string | null
+    externalUrl?: string | null
+  },
+): Promise<ApiResult<{ linked: boolean }>> {
+  return request<{ linked: boolean }>(`/sharelists/${sharelistId}/links`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}

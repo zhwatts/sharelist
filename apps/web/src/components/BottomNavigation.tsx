@@ -1,5 +1,5 @@
 import { Flex } from 'antd'
-import { ListMusic, Users, Settings, ShieldCheck } from 'lucide-react'
+import { ListMusic, PlusCircle, Users, Settings, ShieldCheck } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -10,10 +10,14 @@ export function BottomNavigation() {
 
   const hasAdminAccess = user?.permissions.includes('usermanage:listusers') ?? false
 
+  const isMyListsActive =
+    location.pathname === '/' || location.pathname.startsWith('/list')
+
   const navItems = [
-    { icon: ListMusic, label: 'My Lists', path: '/', active: location.pathname === '/' },
-    { icon: Users, label: 'Friends', path: '/friends', active: location.pathname === '/friends' },
-    { icon: Settings, label: 'Settings', path: '/settings', active: location.pathname === '/settings' },
+    { icon: ListMusic,  label: 'My Lists', path: '/',        active: isMyListsActive },
+    { icon: PlusCircle, label: 'Create',   path: '/create',  active: location.pathname === '/create' },
+    { icon: Users,      label: 'Friends',  path: '/friends', active: location.pathname === '/friends' },
+    { icon: Settings,   label: 'Settings', path: '/settings',active: location.pathname.startsWith('/settings') },
     ...(hasAdminAccess ? [{ icon: ShieldCheck, label: 'Admin', path: '/admin/users', active: location.pathname.startsWith('/admin') }] : []),
   ]
 

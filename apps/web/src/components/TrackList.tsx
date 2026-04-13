@@ -1,21 +1,25 @@
-import { Avatar, Tag, Flex, Space } from 'antd'
+import { Avatar, Flex, Space } from 'antd'
 import { SlidersHorizontal } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSpotify, faAmazon } from '@fortawesome/free-brands-svg-icons'
+import { faSpotify, faApple } from '@fortawesome/free-brands-svg-icons'
 
 export interface Track {
-  id: number
+  id: string
   title: string
   artist: string
   duration: string
-  albumArt: string
+  albumArt?: string
   isPlaying?: boolean
-  isNew?: boolean
-  platform?: 'spotify' | 'amazon'
+  platform?: 'spotify' | 'apple_music'
 }
 
 interface TrackListProps {
   tracks: Track[]
+}
+
+const PLATFORM_META: Record<string, { icon: typeof faSpotify; color: string }> = {
+  spotify:     { icon: faSpotify, color: '#1DB954' },
+  apple_music: { icon: faApple,  color: '#FA243C' },
 }
 
 export function TrackList({ tracks }: TrackListProps) {
@@ -47,7 +51,7 @@ export function TrackList({ tracks }: TrackListProps) {
           >
             <Flex align="center" gap={12} style={{ width: '100%' }}>
               {/* Track number or equalizer */}
-              <div style={{ width: '16px', textAlign: 'center' }}>
+              <div style={{ width: '16px', textAlign: 'center', flexShrink: 0 }}>
                 {track.isPlaying ? (
                   <Flex align="flex-end" justify="center" gap={2} style={{ height: '16px' }}>
                     <div style={{ width: '2px', height: '60%', background: '#38BDF8', animation: 'pulse 1s ease-in-out infinite' }} />
@@ -60,7 +64,11 @@ export function TrackList({ tracks }: TrackListProps) {
               </div>
 
               {/* Album art */}
-              <Avatar src={track.albumArt} size={40} shape="square" style={{ borderRadius: '6px' }} />
+              {track.albumArt ? (
+                <Avatar src={track.albumArt} size={40} shape="square" style={{ borderRadius: '6px', flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: '40px', height: '40px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '16px' }}>🎵</div>
+              )}
 
               {/* Track info */}
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -73,27 +81,18 @@ export function TrackList({ tracks }: TrackListProps) {
               </div>
 
               {/* Right side */}
-              <Flex align="center" gap={8}>
-                {track.isNew && (
-                  <Tag
-                    color="rgba(74, 222, 128, 0.15)"
-                    style={{ color: '#4ADE80', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', border: '1px solid rgba(74, 222, 128, 0.3)', margin: 0 }}
-                  >
-                    NEW
-                  </Tag>
-                )}
+              <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
                 <span style={{ color: '#64748B', fontSize: '13px', fontWeight: 400 }}>{track.duration}</span>
-                {track.platform && (
+                {track.platform && PLATFORM_META[track.platform] && (
                   <div
                     style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.4, transition: 'opacity 0.2s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
                     onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.4' }}
                   >
-                    {track.platform === 'spotify' ? (
-                      <FontAwesomeIcon icon={faSpotify} style={{ width: '16px', height: '16px', color: '#1DB954' }} />
-                    ) : (
-                      <FontAwesomeIcon icon={faAmazon} style={{ width: '16px', height: '16px', color: '#00D9FF' }} />
-                    )}
+                    <FontAwesomeIcon
+                      icon={PLATFORM_META[track.platform].icon}
+                      style={{ width: '16px', height: '16px', color: PLATFORM_META[track.platform].color }}
+                    />
                   </div>
                 )}
               </Flex>

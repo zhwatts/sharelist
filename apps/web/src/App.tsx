@@ -8,6 +8,8 @@ import { PasswordResetRequest } from './pages/PasswordResetRequest'
 import { PasswordResetConfirm } from './pages/PasswordResetConfirm'
 import { MagicLinkConfirm } from './pages/MagicLinkConfirm'
 import { Profile } from './pages/Profile'
+import { ShareListsView } from './pages/ShareListsView'
+import { CreateShareList } from './pages/CreateShareList'
 import { PlaylistView } from './pages/PlaylistView'
 import { AdminUsers } from './pages/AdminUsers'
 import { Settings } from './pages/Settings'
@@ -87,7 +89,9 @@ function App() {
 
         {/* Authenticated routes — wrapped in MainLayout */}
         <Route element={<MainLayout />}>
-          <Route index element={<PlaylistView />} />
+          <Route index element={<ShareListsView />} />
+          <Route path="/create" element={<CreateShareList />} />
+          <Route path="/list/:id" element={<PlaylistView />} />
           <Route path="/profile" element={<Profile />} />
           <Route
             path="/admin/users"
