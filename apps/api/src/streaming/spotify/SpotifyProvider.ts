@@ -68,19 +68,50 @@ interface SpotifyMeResponse {
   id: string
 }
 
-interface SpotifyTracksResponse {
-  items: { track: SpotifyTrackObject | null }[] | null
+// Response type for GET /playlists/{id}/items (current, non-deprecated endpoint)
+interface SpotifyPlaylistItemsResponse {
+  // `item` is the current field name; `track` is the deprecated fallback
+  items: Array<{
+    item?: SpotifyTrackObject | SpotifyEpisodeObject | null
+    track?: SpotifyTrackObject | SpotifyEpisodeObject | null // deprecated — kept for safety
+    is_local: boolean
+  }> | null
   total?: number
   next: string | null
 }
 
 interface SpotifyTrackObject {
+  type: 'track'
   id: string
   name: string
   artists: { name: string }[]
   album: { name: string; images: { url: string }[] }
   duration_ms: number
   external_urls: { spotify: string }
+}
+
+// Minimal — we only need `type` to filter episodes out
+interface SpotifyEpisodeObject {
+  type: 'episode'
+  id: string
+}
+
+// ── Rate-limit-aware fetch ────────────────────────────────────────────────────
+
+/**
+ * Wraps fetch() with Retry-After / exponential-backoff handling for HTTP 429.
+ * Per Spotify rules: respect the Retry-After header; never retry in a tight loop.
+ */
+async function spotifyFetch(url: string, init: RequestInit, attempt = 0): Promise<Response> {
+  const res = await fetch(url, init)
+  if (res.status === 429) {
+    const retryAfter = parseInt(res.headers.get('Retry-After') ?? '1', 10)
+    const waitMs = (isNaN(retryAfter) ? 1 : retryAfter) * 1000 * Math.pow(2, attempt)
+    console.log(JSON.stringify({ level: 'warn', message: 'Spotify rate limited', retryAfterMs: waitMs, attempt }))
+    await new Promise(r => setTimeout(r, waitMs))
+    return spotifyFetch(url, init, attempt + 1)
+  }
+  return res
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -178,7 +209,7 @@ export class SpotifyProvider implements StreamingProvider {
 
   async getPlaylist(userId: string, playlistId: string): Promise<StreamingPlaylist> {
     const accessToken = await this.refreshTokenIfNeeded(userId)
-    const res = await fetch(
+    const res = await spotifyFetch(
       `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}?fields=id,name,description,images,external_urls,tracks.total`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     )
@@ -200,10 +231,15 @@ export class SpotifyProvider implements StreamingProvider {
   async getPlaylistTracks(userId: string, playlistId: string): Promise<StreamingTrack[]> {
     const accessToken = await this.refreshTokenIfNeeded(userId)
     const tracks: StreamingTrack[] = []
-    let url: string | null = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/tracks?limit=50`
+
+    // Use the current /items endpoint (not the deprecated /tracks endpoint).
+    // The /items endpoint returns audio content in the `item` field; `track` is deprecated.
+    let url: string | null =
+      `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/items` +
+      `?limit=50&additional_types=track`
 
     while (url) {
-      const res = await fetch(url, {
+      const res = await spotifyFetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
 
@@ -213,32 +249,33 @@ export class SpotifyProvider implements StreamingProvider {
       }
 
       const raw = await res.json() as unknown
-      const data = raw as SpotifyTracksResponse
+      const data = raw as SpotifyPlaylistItemsResponse
 
-      // Diagnostic log — visible in dev, helps spot unexpected response shapes
       console.log(JSON.stringify({
         level: 'debug',
-        message: 'Spotify tracks page',
+        message: 'Spotify items page',
         playlistId,
-        status: res.status,
         total: (raw as Record<string, unknown>)['total'],
         itemCount: Array.isArray(data.items) ? data.items.length : 'not-array',
         nextPresent: !!data.next,
       }))
 
       if (!Array.isArray(data.items)) {
-        console.log(JSON.stringify({ level: 'warn', message: 'Spotify tracks response missing items array', raw: JSON.stringify(raw as Record<string, unknown>).slice(0, 500) }))
+        console.log(JSON.stringify({ level: 'warn', message: 'Spotify items response missing items array', raw: JSON.stringify(raw as Record<string, unknown>).slice(0, 500) }))
         break
       }
 
       for (const item of data.items) {
-        if (!item?.track) continue // null = local file or podcast episode
-        const t = item.track
-        if (!t.id) continue // local files can have null id even when track object exists
+        // `item.item` is the current field; fall back to deprecated `item.track`
+        const audioObj = item.item ?? item.track
+        if (!audioObj) continue                  // null = local file
+        if (audioObj.type !== 'track') continue  // skip podcast episodes
+        const t = audioObj as SpotifyTrackObject
+        if (!t.id) continue
         tracks.push({
           id: t.id,
           title: t.name,
-          artist: t.artists?.map((a: { name: string }) => a.name).join(', ') ?? 'Unknown Artist',
+          artist: t.artists?.map(a => a.name).join(', ') ?? 'Unknown Artist',
           album: t.album?.name,
           durationMs: t.duration_ms,
           imageUrl: t.album?.images?.[0]?.url,
