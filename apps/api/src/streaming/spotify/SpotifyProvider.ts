@@ -69,7 +69,8 @@ interface SpotifyMeResponse {
 }
 
 interface SpotifyTracksResponse {
-  items: { track: SpotifyTrackObject | null }[]
+  items: { track: SpotifyTrackObject | null }[] | null
+  total?: number
   next: string | null
 }
 
@@ -176,21 +177,42 @@ export class SpotifyProvider implements StreamingProvider {
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
+
       if (!res.ok) {
         const body = await res.text()
         throw new Error(`Spotify getPlaylistTracks failed (${res.status}): ${body}`)
       }
-      const data = (await res.json()) as SpotifyTracksResponse
+
+      const raw = await res.json() as unknown
+      const data = raw as SpotifyTracksResponse
+
+      // Diagnostic log — visible in dev, helps spot unexpected response shapes
+      console.log(JSON.stringify({
+        level: 'debug',
+        message: 'Spotify tracks page',
+        playlistId,
+        status: res.status,
+        total: (raw as Record<string, unknown>)['total'],
+        itemCount: Array.isArray(data.items) ? data.items.length : 'not-array',
+        nextPresent: !!data.next,
+      }))
+
+      if (!Array.isArray(data.items)) {
+        console.log(JSON.stringify({ level: 'warn', message: 'Spotify tracks response missing items array', raw: JSON.stringify(raw as Record<string, unknown>).slice(0, 500) }))
+        break
+      }
+
       for (const item of data.items) {
-        if (!item.track) continue // local files have null track
+        if (!item?.track) continue // null = local file or podcast episode
         const t = item.track
+        if (!t.id) continue // local files can have null id even when track object exists
         tracks.push({
           id: t.id,
           title: t.name,
-          artist: t.artists.map(a => a.name).join(', '),
+          artist: t.artists?.map((a: { name: string }) => a.name).join(', ') ?? 'Unknown Artist',
           album: t.album?.name,
           durationMs: t.duration_ms,
-          imageUrl: t.album?.images[0]?.url,
+          imageUrl: t.album?.images?.[0]?.url,
           externalUrl: t.external_urls?.spotify,
         })
       }
