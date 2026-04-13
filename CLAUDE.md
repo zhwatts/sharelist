@@ -13,7 +13,7 @@ across platforms. It does not stream audio — it is a metadata and sharing laye
 /.claude/agents  → agent role definitions
 
 ## Tech stack
-- Frontend: React, TypeScript, Tailwind
+- Frontend: React, TypeScript, Ant Design (antd v6 + @ant-design/icons)
 - Backend: Node.js, Express, TypeScript
 - Database & auth: Supabase (Postgres + Auth)
 - Deployment: Render (both frontend and backend)
@@ -47,10 +47,68 @@ developer has explicitly moved it to "In Progress" first.
   without explicit developer instruction
 - Agents must never move an issue to Done — that is the developer's action only
 
+**Commit cadence — mandatory:**
+Agents must commit after each meaningful, self-contained unit of work. Do not
+batch multiple unrelated changes into one commit or wait until a story is fully
+complete before committing. Commit at natural checkpoints such as:
+
+- After each discrete backend change (new route, middleware, migration)
+- After each discrete frontend change (new component, page, or section)
+- After any bug fix, regardless of size
+- After updating documentation or configuration
+
+Each commit must:
+- Pass `tsc --noEmit` for any app whose files were touched before committing
+- Reference the issue number in the message body (e.g. `(#23)`)
+- Use a concise imperative subject line (50 chars or fewer where possible)
+- Be pushed to the remote branch immediately after it is created
+
+Never leave working, type-safe code uncommitted at the end of a task.
+
+**No work without a ticket — no exceptions:**
+This rule applies to every change, no matter how small: config edits, env var
+changes, refactors, dependency updates, documentation. If there is no open
+GitHub issue covering the change, the agent must create one first and wait for
+the developer to move it to "In Progress" before touching any file.
+
+Conversational answers, explanations, and architectural recommendations do not
+require a ticket. Any action that writes, edits, or deletes a file does.
+
+**Every new issue must be on the project board with Backlog status:**
+The GitHub Project board is the primary visibility mechanism for all work. An
+issue not on the board — or on the board with no status — is invisible to the
+developer. See `.claude/agents/github-agent.md` for the exact creation
+procedure, including the GraphQL mutation required to set the status.
+
 ## Agent roles
 - Orchestrator: receives goals, creates issues, delegates to other agents
 - Builder: writes and reviews all application code
 - GitHub agent: manages the project board and issue lifecycle
+
+## Design system
+
+The ShareList UI uses a dark, premium aesthetic derived from the Figma reference in `_EXAMPLE FRONTEND/`.
+The full design guide is at `.claude/design-system.md` — **all frontend work must follow it**.
+
+Key rules:
+- No Tailwind. No utility classes. Pure Ant Design + inline styles only.
+- App is wrapped in `<ConfigProvider>` with `theme.darkAlgorithm` and ShareList tokens.
+- Background `#111314`, surface cards `#1C1F21`, nav `#161819`
+- Primary accent `#38BDF8` (sky blue), secondary `#4ADE80` (mint)
+- Text primary `#F1F5F9`, muted `#64748B`, borders `#2A2D30`
+- Font: Inter (loaded via Google Fonts in `index.html`)
+- All styling via Ant Design component props and `style={{}}` inline styles
+- See `.claude/design-system.md` for ConfigProvider setup and component patterns
+
+## Frontend architecture — API-only
+The frontend (`apps/web`) must never interact with Supabase directly. All data
+access and authentication goes through the Express API (`apps/api`).
+
+- No `@supabase/supabase-js` in `apps/web`
+- No Supabase URL or anon key in any `VITE_*` env var
+- The only env var the frontend needs is `VITE_API_URL`
+- Auth tokens received from the API are stored client-side and sent as
+  `Authorization: Bearer <token>` headers on subsequent API requests
 
 ## Out of scope
 - Audio streaming or playback

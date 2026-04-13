@@ -11,6 +11,8 @@ export interface User {
   avatarUrl?: string
   connectedPlatforms: Platform[]
   createdAt: string
+  role: string
+  permissions: string[]
 }
 
 export interface Track {
