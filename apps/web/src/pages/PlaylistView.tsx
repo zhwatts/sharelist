@@ -26,22 +26,29 @@ export function PlaylistView() {
   const navigate = useNavigate()
   const [notifyApi, contextHolder] = notification.useNotification()
 
-  const [sharelist, setSharelist] = useState<ShareListDetail | null>(null)
-  const [isLoading, setLoading]   = useState(true)
-  const [error, setError]         = useState<string | null>(null)
+  const [sharelist, setSharelist]         = useState<ShareListDetail | null>(null)
+  const [isLoading, setLoading]           = useState(true)
+  const [syncing, setSyncing]             = useState(false)
+  const [lastSynced, setLastSynced]       = useState<Date | null>(null)
+  const [error, setError]                 = useState<string | null>(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
 
-  const loadShareList = async () => {
+  const loadShareList = async (isSync = false) => {
     if (!id) return
-    setLoading(true)
+    if (isSync) setSyncing(true)
+    else setLoading(true)
     const result = await api.getShareList(id)
-    setLoading(false)
+    if (isSync) setSyncing(false)
+    else setLoading(false)
     if (api.isError(result)) {
       setError(result.error.message)
       return
     }
     setSharelist(result.data)
+    setLastSynced(new Date())
   }
+
+  const handleSync = () => { void loadShareList(true) }
 
   useEffect(() => {
     void loadShareList()
@@ -94,7 +101,13 @@ export function PlaylistView() {
       </div>
 
       <div style={{ marginBottom: '24px' }}>
-        <SyncStatusBar isLoading={isLoading} onManage={() => setShowLinkModal(true)} />
+        <SyncStatusBar
+          isLoading={isLoading}
+          syncing={syncing}
+          lastSynced={lastSynced}
+          onManage={() => setShowLinkModal(true)}
+          onSync={handleSync}
+        />
       </div>
 
       {isLoading ? (
