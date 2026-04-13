@@ -53,7 +53,7 @@ interface SpotifyPlaylistItem {
   id: string
   name: string
   description: string | null
-  tracks: { total: number }
+  tracks: { total: number } | null
   images: { url: string }[]
   external_urls: { spotify: string }
   public: boolean | null
@@ -150,11 +150,12 @@ export class SpotifyProvider implements StreamingProvider {
       const data = (await res.json()) as SpotifyPlaylistsResponse
 
       for (const item of data.items) {
+        if (!item?.id) continue  // skip null/empty entries
         playlists.push({
           id: item.id,
           name: item.name,
           description: item.description ?? undefined,
-          trackCount: item.tracks.total,
+          trackCount: item.tracks?.total ?? 0,
           imageUrl: item.images[0]?.url,
           externalUrl: item.external_urls.spotify,
         })
