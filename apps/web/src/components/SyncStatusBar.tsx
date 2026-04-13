@@ -1,12 +1,14 @@
 import { Badge, Button, Flex, Skeleton } from 'antd'
-import { SyncOutlined } from '@ant-design/icons'
+import { SyncOutlined, SwapOutlined } from '@ant-design/icons'
 
 interface SyncStatusBarProps {
   isLoading?: boolean
   syncing?: boolean
+  crossSyncing?: boolean
   lastSynced?: Date | null
   onManage?: () => void
   onSync?: () => void
+  onCrossSync?: () => void
 }
 
 function formatLastSynced(date: Date): string {
@@ -20,7 +22,7 @@ function formatLastSynced(date: Date): string {
   return `${diffHours}h ago`
 }
 
-export function SyncStatusBar({ isLoading = false, syncing = false, lastSynced, onManage, onSync }: SyncStatusBarProps) {
+export function SyncStatusBar({ isLoading = false, syncing = false, crossSyncing = false, lastSynced, onManage, onSync, onCrossSync }: SyncStatusBarProps) {
   if (isLoading) {
     return (
       <Flex justify="space-between" align="center" style={{ padding: '12px 16px', background: 'rgba(28, 31, 33, 0.3)', borderRadius: '8px' }}>
@@ -44,15 +46,28 @@ export function SyncStatusBar({ isLoading = false, syncing = false, lastSynced, 
         {syncing && (
           <span style={{ color: '#38BDF8', fontSize: '12px' }}>· syncing…</span>
         )}
+        {crossSyncing && !syncing && (
+          <span style={{ color: '#4ADE80', fontSize: '12px' }}>· cross-syncing…</span>
+        )}
       </Flex>
       <Flex align="center" gap={12}>
+        <Button
+          type="text"
+          size="small"
+          loading={crossSyncing}
+          icon={!crossSyncing && <SwapOutlined />}
+          onClick={onCrossSync}
+          style={{ color: '#4ADE80', fontSize: '12px', fontWeight: 600, padding: '0 6px', height: '24px' }}
+        >
+          {crossSyncing ? '' : 'Cross Sync'}
+        </Button>
         <Button
           type="text"
           size="small"
           loading={syncing}
           icon={!syncing && <SyncOutlined />}
           onClick={onSync}
-          style={{ color: '#4ADE80', fontSize: '12px', fontWeight: 600, padding: '0 6px', height: '24px' }}
+          style={{ color: '#64748B', fontSize: '12px', fontWeight: 600, padding: '0 6px', height: '24px' }}
         >
           {syncing ? '' : 'Force Sync'}
         </Button>

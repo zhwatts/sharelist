@@ -290,6 +290,27 @@ export function syncShareList(id: string): Promise<ApiResult<ShareListDetail>> {
   return request<ShareListDetail>(`/sharelists/${id}/sync`, { method: 'POST' })
 }
 
+// ── Cross-sync result types ────────────────────────────────────────────────────
+
+export interface CrossSyncLinkResult {
+  linkId: string
+  provider: string
+  playlistName: string
+  tracksAdded: number
+  skipped: number
+  error?: string
+}
+
+export interface CrossSyncResult {
+  sharelistId: string
+  links: CrossSyncLinkResult[]
+  totalAdded: number
+}
+
+export function crossSyncShareList(id: string): Promise<ApiResult<CrossSyncResult>> {
+  return request<CrossSyncResult>(`/sharelists/${id}/cross-sync`, { method: 'POST' })
+}
+
 export function linkPlaylistToShareList(
   sharelistId: string,
   data: {

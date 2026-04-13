@@ -29,6 +29,7 @@ export function PlaylistView() {
   const [sharelist, setSharelist]         = useState<ShareListDetail | null>(null)
   const [isLoading, setLoading]           = useState(true)
   const [syncing, setSyncing]             = useState(false)
+  const [crossSyncing, setCrossSyncing]   = useState(false)
   const [lastSynced, setLastSynced]       = useState<Date | null>(null)
   const [error, setError]                 = useState<string | null>(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
@@ -44,6 +45,37 @@ export function PlaylistView() {
     }
     setSharelist(result.data)
     setLastSynced(new Date())
+  }
+
+  const handleCrossSync = async () => {
+    if (!id) return
+    setCrossSyncing(true)
+    const result = await api.crossSyncShareList(id)
+    setCrossSyncing(false)
+    if (api.isError(result)) {
+      notifyApi.error({ message: 'Cross Sync failed', description: result.error.message, placement: 'topRight' })
+      return
+    }
+    const { totalAdded, links } = result.data
+    if (totalAdded === 0) {
+      notifyApi.info({
+        message: 'Already up to date',
+        description: 'All playlists already have the same tracks.',
+        placement: 'topRight',
+      })
+    } else {
+      const details = links
+        .filter(l => l.tracksAdded > 0)
+        .map(l => `${l.tracksAdded} track${l.tracksAdded === 1 ? '' : 's'} → ${l.playlistName}`)
+        .join('\n')
+      notifyApi.success({
+        message: `Cross Sync complete — ${totalAdded} track${totalAdded === 1 ? '' : 's'} added`,
+        description: details || undefined,
+        placement: 'topRight',
+      })
+    }
+    // Reload so track counts reflect the additions
+    void loadShareList()
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,9 +146,11 @@ export function PlaylistView() {
         <SyncStatusBar
           isLoading={isLoading}
           syncing={syncing}
+          crossSyncing={crossSyncing}
           lastSynced={lastSynced}
           onManage={() => setShowLinkModal(true)}
           onSync={() => { void handleSync() }}
+          onCrossSync={() => { void handleCrossSync() }}
         />
       </div>
 
