@@ -27,7 +27,7 @@ import {
   getTokens,
   deleteTokens,
 } from '../oauthHelpers'
-import type { StreamingPlaylist, StreamingProvider } from '../types'
+import type { StreamingPlaylist, StreamingProvider, StreamingTrack } from '../types'
 
 // ── Env helpers ───────────────────────────────────────────────────────────────
 
@@ -190,6 +190,54 @@ export class AppleMusicProvider implements StreamingProvider {
     }
 
     return playlists
+  }
+
+  async getPlaylistTracks(userId: string, playlistId: string): Promise<StreamingTrack[]> {
+    const musicUserToken = await this.refreshTokenIfNeeded(userId)
+    const developerToken = generateDeveloperToken()
+    const tracks: StreamingTrack[] = []
+    let url: string | null = `https://api.music.apple.com/v1/me/library/playlists/${encodeURIComponent(playlistId)}/tracks?limit=100`
+
+    while (url) {
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${developerToken}`,
+          'Music-User-Token': musicUserToken,
+        },
+      })
+      if (!res.ok) {
+        const body = await res.text()
+        throw new Error(`Apple Music getPlaylistTracks failed (${res.status}): ${body}`)
+      }
+      interface AMTrack {
+        id: string
+        attributes: {
+          name: string
+          artistName?: string
+          albumName?: string
+          durationInMillis?: number
+          artwork?: { url: string }
+        }
+      }
+      interface AMTracksResponse { data: AMTrack[]; next?: string }
+      const data = (await res.json()) as AMTracksResponse
+      for (const item of data.data) {
+        const a = item.attributes
+        const rawArt = a.artwork?.url
+        const imageUrl = rawArt ? rawArt.replace('{w}', '300').replace('{h}', '300') : undefined
+        tracks.push({
+          id: item.id,
+          title: a.name,
+          artist: a.artistName ?? '',
+          album: a.albumName,
+          durationMs: a.durationInMillis ?? 0,
+          imageUrl,
+          externalUrl: undefined,
+        })
+      }
+      url = data.next ? `https://api.music.apple.com${data.next}` : null
+    }
+    return tracks
   }
 
   // ── Token management ───────────────────────────────────────────────────────

@@ -8,6 +8,17 @@ export interface StreamingPlaylist {
   externalUrl?: string
 }
 
+/** A single track returned by a streaming provider's playlist. */
+export interface StreamingTrack {
+  id: string
+  title: string
+  artist: string
+  album?: string
+  durationMs: number
+  imageUrl?: string
+  externalUrl?: string
+}
+
 /**
  * Contract that every streaming provider module must implement.
  *
@@ -43,6 +54,9 @@ export interface StreamingProvider {
 
   /** Fetch the user's playlists from the provider, refreshing tokens as needed. */
   getPlaylists(userId: string): Promise<StreamingPlaylist[]>
+
+  /** Fetch all tracks from a specific playlist, paginating as needed. */
+  getPlaylistTracks(userId: string, playlistId: string): Promise<StreamingTrack[]>
 
   /**
    * Refreshes the access token if it is close to expiry.

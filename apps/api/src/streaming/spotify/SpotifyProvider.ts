@@ -17,7 +17,7 @@ import {
   getTokens,
   deleteTokens,
 } from '../oauthHelpers'
-import type { StreamingPlaylist, StreamingProvider } from '../types'
+import type { StreamingPlaylist, StreamingProvider, StreamingTrack } from '../types'
 
 // ── Env helpers ───────────────────────────────────────────────────────────────
 
@@ -66,6 +66,20 @@ interface SpotifyPlaylistsResponse {
 
 interface SpotifyMeResponse {
   id: string
+}
+
+interface SpotifyTracksResponse {
+  items: { track: SpotifyTrackObject | null }[]
+  next: string | null
+}
+
+interface SpotifyTrackObject {
+  id: string
+  name: string
+  artists: { name: string }[]
+  album: { name: string; images: { url: string }[] }
+  duration_ms: number
+  external_urls: { spotify: string }
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -150,6 +164,38 @@ export class SpotifyProvider implements StreamingProvider {
     }
 
     return playlists
+  }
+
+  async getPlaylistTracks(userId: string, playlistId: string): Promise<StreamingTrack[]> {
+    const accessToken = await this.refreshTokenIfNeeded(userId)
+    const tracks: StreamingTrack[] = []
+    let url: string | null = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/tracks?limit=50`
+
+    while (url) {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      if (!res.ok) {
+        const body = await res.text()
+        throw new Error(`Spotify getPlaylistTracks failed (${res.status}): ${body}`)
+      }
+      const data = (await res.json()) as SpotifyTracksResponse
+      for (const item of data.items) {
+        if (!item.track) continue // local files have null track
+        const t = item.track
+        tracks.push({
+          id: t.id,
+          title: t.name,
+          artist: t.artists.map(a => a.name).join(', '),
+          album: t.album?.name,
+          durationMs: t.duration_ms,
+          imageUrl: t.album?.images[0]?.url,
+          externalUrl: t.external_urls?.spotify,
+        })
+      }
+      url = data.next
+    }
+    return tracks
   }
 
   // ── Token management ───────────────────────────────────────────────────────
